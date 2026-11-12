@@ -1501,7 +1501,40 @@ async function findFileNumberInRawMessage() {
     }
   }
 
-  // Sortiere nach Score
+  // Akten über die Absender-Adresse finden (Beteiligte mit dieser E-Mail-Adresse)
+  try {
+    const senderEmail = extractEmailAddress(messageData.author);
+    const senderCases = await findCasesByContactEmail(senderEmail, loginData);
+    // Zuletzt geänderte Akten zuerst, ein einzelner Treffer ist aussagekräftiger
+    senderCases.sort((a, b) =>
+      (b.dateChanged || "").localeCompare(a.dateChanged || ""),
+    );
+    const isUniqueSenderCase = senderCases.length === 1;
+
+    for (const senderCase of senderCases) {
+      const existingResult = allResults.find(
+        (result) => result.item.id === senderCase.id,
+      );
+      if (existingResult) {
+        // Aktenzeichen-Treffer und Absender bestätigen sich gegenseitig
+        existingResult.score = Math.min(existingResult.score + 30, 100);
+        existingResult.confidence = Math.min(existingResult.confidence + 15, 99);
+        existingResult.location += " + Absender";
+        continue;
+      }
+      seenIds.add(senderCase.id);
+      allResults.push({
+        item: senderCase,
+        score: isUniqueSenderCase ? 60 : 40,
+        confidence: isUniqueSenderCase ? 80 : 60,
+        location: "Absender",
+      });
+    }
+  } catch (error) {
+    console.error("Fehler bei der Absender-Suche:", error);
+  }
+
+  // Sortiere nach Score (stabil, Absender-Treffer bleiben nach Änderungsdatum sortiert)
   allResults.sort((a, b) => b.score - a.score);
 
   // Begrenze auf Top 3
