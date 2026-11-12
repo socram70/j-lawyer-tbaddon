@@ -30,6 +30,12 @@ document.getElementById("saveButton").addEventListener("click", async function (
   const performOcr = document.getElementById("performOcr").checked;
   const subjectTemplate = document.getElementById("subjectTemplate").value;
   const filenameTemplate = document.getElementById("filenameTemplate").value;
+  const recipientRoleMapping = {};
+  document
+    .querySelectorAll("#recipientRoleMapping select")
+    .forEach((select) => {
+      recipientRoleMapping[select.dataset.partyType] = select.value;
+    });
 
   try {
     const hasServerPermission = await requestServerPermission(serverAddress);
@@ -51,6 +57,7 @@ document.getElementById("saveButton").addEventListener("click", async function (
       performOcr: performOcr,
       subjectTemplate: subjectTemplate,
       filenameTemplate: filenameTemplate,
+      recipientRoleMapping: recipientRoleMapping,
     })
     .then(() => {
       document.getElementById("saveButton").value =
@@ -152,6 +159,7 @@ document.addEventListener("DOMContentLoaded", function () {
       "performOcr",
       "subjectTemplate",
       "filenameTemplate",
+      "recipientRoleMapping",
     ])
     .then((result) => {
       document.getElementById("username").value = result.username || "";
@@ -168,5 +176,59 @@ document.addEventListener("DOMContentLoaded", function () {
         result.subjectTemplate || "";
       document.getElementById("filenameTemplate").value =
         result.filenameTemplate || "";
+      renderRecipientRoleMapping(result);
     });
 });
+
+// Beteiligtentypen vom Server laden und je Typ eine Auswahl An/CC/BCC/nicht zuordnen anzeigen
+async function renderRecipientRoleMapping(settings) {
+  const container = document.getElementById("recipientRoleMapping");
+  const mapping = settings.recipientRoleMapping || DEFAULT_RECIPIENT_ROLE_MAPPING;
+  let partyTypes = Object.keys(mapping);
+
+  try {
+    if (!settings.serverAddress || !(await hasServerPermission(settings.serverAddress))) {
+      throw new Error("Keine Serveradresse oder Berechtigung");
+    }
+    const headers = new Headers();
+    headers.append(
+      "Authorization",
+      "Basic " +
+        btoa(unescape(encodeURIComponent(settings.username + ":" + settings.password))),
+    );
+    const response = await fetch(
+      settings.serverAddress + "/j-lawyer-io/rest/v7/configuration/party-types",
+      { method: "GET", headers },
+    );
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    partyTypes = (await response.json())
+      .sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0))
+      .map((partyType) => partyType.name);
+  } catch (error) {
+    console.error("Beteiligtentypen konnten nicht geladen werden:", error);
+    const hint = document.createElement("small");
+    hint.style.cssText = "color: #b45309; display: block; margin-bottom: 6px";
+    hint.textContent = i18nMessage("recipientRoleMappingLoadError");
+    container.appendChild(hint);
+  }
+
+  for (const partyType of partyTypes) {
+    const row = document.createElement("div");
+    row.style.cssText = "display: flex; justify-content: space-between; gap: 10px; margin: 3px 0; max-width: 360px";
+    const label = document.createElement("span");
+    label.textContent = partyType;
+    const select = document.createElement("select");
+    select.dataset.partyType = partyType;
+    for (const field of [...RECIPIENT_FIELDS, "none"]) {
+      const option = document.createElement("option");
+      option.value = field;
+      option.textContent = i18nMessage(`recipientField_${field}`);
+      select.appendChild(option);
+    }
+    select.value = getRecipientFieldForPartyType(partyType, mapping);
+    row.append(label, select);
+    container.appendChild(row);
+  }
+}

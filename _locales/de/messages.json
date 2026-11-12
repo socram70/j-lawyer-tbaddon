@@ -79,6 +79,46 @@
   "performOcrLabel": {
     "message": "OCR für neue Dokumente anstoßen, Bilder und PDFs"
   },
+  "autoAssignRecipientsButton": {
+    "message": "Automatisch zuordnen"
+  },
+  "recipientField_to": {
+    "message": "An"
+  },
+  "recipientField_cc": {
+    "message": "CC"
+  },
+  "recipientField_bcc": {
+    "message": "BCC"
+  },
+  "recipientField_none": {
+    "message": "nicht zuordnen"
+  },
+  "recipientsAddedFeedback": {
+    "message": "Hinzugefügt: $ITEMS$",
+    "placeholders": {
+      "items": {
+        "content": "$1"
+      }
+    }
+  },
+  "recipientsAlreadyPresentFeedback": {
+    "message": "Bereits als Empfänger vorhanden: $ITEMS$",
+    "placeholders": {
+      "items": {
+        "content": "$1"
+      }
+    }
+  },
+  "noRecipientsToAssign": {
+    "message": "Laut Einstellungen ist kein Beteiligter dieser Akte automatisch zuzuordnen."
+  },
+  "recipientRoleMappingLabel": {
+    "message": "Automatische Empfänger-Zuordnung je Beteiligtentyp:"
+  },
+  "recipientRoleMappingLoadError": {
+    "message": "Beteiligtentypen konnten nicht vom Server geladen werden, es werden nur die Standardtypen angezeigt."
+  },
   "subjectTemplateLabel": {
     "message": "Betreff-Vorlage für neue E-Mails, leer bedeutet Standard:"
   },

@@ -871,6 +871,97 @@ async function getPartiesInCase(caseId, username, password, serverAddress) {
 }
 
 // Funktion zum Anzeigen der Beteiligten einer Akte
+function getRecipientEmail(recipient) {
+  if (typeof recipient !== "string") {
+    return null;
+  }
+  const match = recipient.match(/<([^<>]+)>/);
+  return (match ? match[1] : recipient).trim().toLowerCase();
+}
+
+// Fügt Beteiligte in An/CC/BCC des aktiven Compose-Fensters ein ({ party, field }),
+// ohne Adressen zu doppeln, und ergänzt deren Zeichen im Betreff
+async function addPartiesToRecipients(entries) {
+  const feedback = document.getElementById("feedback");
+  try {
+    const tabs = await browser.tabs.query({
+      active: true,
+      currentWindow: true,
+    });
+    if (tabs.length === 0) {
+      console.log("Kein aktiver Tab gefunden.");
+      return;
+    }
+    const tabId = tabs[0].id;
+    const composeDetails = await browser.compose.getComposeDetails(tabId);
+
+    const recipientsByField = {};
+    const existingEmails = new Set();
+    for (const field of RECIPIENT_FIELDS) {
+      const value = composeDetails[field] || [];
+      recipientsByField[field] = Array.isArray(value) ? [...value] : [value];
+      recipientsByField[field].forEach((recipient) => {
+        const email = getRecipientEmail(recipient);
+        if (email) {
+          existingEmails.add(email);
+        }
+      });
+    }
+
+    let updatedSubject = composeDetails.subject || "";
+    const added = [];
+    const skipped = [];
+    for (const { party, field } of entries) {
+      const email = party.email.trim().toLowerCase();
+      if (existingEmails.has(email)) {
+        skipped.push(party.email);
+      } else {
+        existingEmails.add(email);
+        recipientsByField[field].push(`${party.displayName} <${party.email}>`);
+        added.push(`${i18nMessage(`recipientField_${field}`)}: ${party.displayName}`);
+      }
+
+      // Zeichen des Beteiligten zum Betreff hinzufügen, falls noch nicht enthalten
+      if (party.reference && !updatedSubject.includes(party.reference)) {
+        updatedSubject = updatedSubject.trim()
+          ? `${updatedSubject.trim()} (Zeichen: ${party.reference})`
+          : `Zeichen: ${party.reference}`;
+      }
+    }
+
+    const updateDetails = {};
+    for (const field of RECIPIENT_FIELDS) {
+      updateDetails[field] = recipientsByField[field];
+    }
+    if (updatedSubject !== (composeDetails.subject || "")) {
+      updateDetails.subject = updatedSubject;
+    }
+    await browser.compose.setComposeDetails(tabId, updateDetails);
+
+    if (entries.length === 0) {
+      feedback.textContent = i18nMessage("noRecipientsToAssign");
+      feedback.style.color = "orange";
+    } else if (added.length > 0) {
+      feedback.textContent = i18nMessage("recipientsAddedFeedback", [
+        added.join(", "),
+      ]);
+      feedback.style.color = "green";
+    } else {
+      feedback.textContent = i18nMessage("recipientsAlreadyPresentFeedback", [
+        skipped.join(", "),
+      ]);
+      feedback.style.color = "orange";
+    }
+    setTimeout(() => {
+      feedback.textContent = "";
+    }, 3000);
+  } catch (error) {
+    console.error("Fehler beim Aktualisieren des Compose-Fensters:", error);
+    feedback.textContent = i18nMessage("errorPrefix", [error.message]);
+    feedback.style.color = "red";
+  }
+}
+
 async function displayParties(caseId) {
   try {
     if (!caseId) {
@@ -944,6 +1035,28 @@ async function displayParties(caseId) {
       return nameA.localeCompare(nameB);
     });
 
+    // Button "Automatisch zuordnen" (Zuordnung je Beteiligtentyp aus den Einstellungen)
+    const autoAssignButton = document.createElement("button");
+    autoAssignButton.type = "button";
+    autoAssignButton.className = "autoAssignRecipientsButton";
+    autoAssignButton.textContent = i18nMessage("autoAssignRecipientsButton");
+    autoAssignButton.addEventListener("click", async function () {
+      const { recipientRoleMapping } = await browser.storage.local.get(
+        "recipientRoleMapping",
+      );
+      const entries = partiesWithEmails
+        .map((party) => ({
+          party,
+          field: getRecipientFieldForPartyType(
+            party.involvementType,
+            recipientRoleMapping,
+          ),
+        }))
+        .filter((entry) => entry.field !== "none");
+      await addPartiesToRecipients(entries);
+    });
+    partiesListElement.appendChild(autoAssignButton);
+
     // Beteiligten-Liste erstellen
     partiesWithEmails.forEach((party) => {
       const div = document.createElement("div");
@@ -954,6 +1067,7 @@ async function displayParties(caseId) {
       if (party.firstName) {
         displayName += `, ${party.firstName}`;
       }
+      party.displayName = displayName;
 
       // Involvementtype als Badge hinzufügen
       let involvementBadge = "";
@@ -967,119 +1081,29 @@ async function displayParties(caseId) {
         referenceInfo = ` - Zeichen: ${party.reference}`;
       }
 
-      div.textContent = `${displayName}${involvementBadge}${referenceInfo} (${party.email})`;
-      div.setAttribute("data-email", party.email);
-      div.setAttribute("data-name", displayName);
+      // Klick auf den Namen fügt wie bisher als "An" hinzu
+      const label = document.createElement("span");
+      label.className = "partyLabel";
+      label.textContent = `${displayName}${involvementBadge}${referenceInfo} (${party.email})`;
+      label.addEventListener("click", () =>
+        addPartiesToRecipients([{ party, field: "to" }]),
+      );
+      div.appendChild(label);
 
-      // Referenz als Datenattribut speichern, falls vorhanden
-      if (party.reference) {
-        div.setAttribute("data-reference", party.reference);
+      // Buttons für An / CC / BCC
+      const buttons = document.createElement("span");
+      buttons.className = "partyRecipientButtons";
+      for (const field of RECIPIENT_FIELDS) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = i18nMessage(`recipientField_${field}`);
+        button.addEventListener("click", (event) => {
+          event.stopPropagation();
+          addPartiesToRecipients([{ party, field }]);
+        });
+        buttons.appendChild(button);
       }
-
-      // Event-Listener für Klick auf Beteiligten
-      div.addEventListener("click", async function () {
-        const email = this.getAttribute("data-email");
-        const name = this.getAttribute("data-name");
-        const reference = this.getAttribute("data-reference");
-
-        try {
-          // Aktiven Tab im Compose-Fenster ermitteln
-          const tabs = await browser.tabs.query({
-            active: true,
-            currentWindow: true,
-          });
-          if (tabs.length === 0) {
-            console.log("Kein aktiver Tab gefunden.");
-            return;
-          }
-
-          const tabId = tabs[0].id;
-
-          // Aktuelle Compose-Details abrufen
-          const composeDetails = await browser.compose.getComposeDetails(tabId);
-
-          // Aktualisierte Liste der Empfänger erstellen
-          let recipients = [];
-          if (composeDetails.to) {
-            if (Array.isArray(composeDetails.to)) {
-              recipients = [...composeDetails.to];
-            } else {
-              recipients = [composeDetails.to];
-            }
-          }
-
-          // Neuen Empfänger formatieren und hinzufügen
-          const formattedRecipient = `${name} <${email}>`;
-
-          // Prüfen, ob der Empfänger bereits in der Liste ist
-          const emailExists = recipients.some((recipient) => {
-            if (typeof recipient === "string") {
-              return recipient.includes(email);
-            } else if (recipient.nodeId) {
-              return false; // NodeID kann nicht geprüft werden ohne weitere Infos
-            }
-            return false;
-          });
-
-          // Nur hinzufügen, wenn die E-Mail noch nicht in der Liste ist
-          if (!emailExists) {
-            recipients.push(formattedRecipient);
-          }
-
-          // Betreff aktualisieren, wenn eine Referenz vorhanden ist
-          let updatedSubject = composeDetails.subject || "";
-          if (reference) {
-            // Prüfen, ob die Referenz bereits im Betreff vorhanden ist
-            if (!updatedSubject.includes(reference)) {
-              // Referenz zum Betreff hinzufügen mit dem Format "Zeichen: [referenz]"
-              updatedSubject = updatedSubject.trim()
-                ? `${updatedSubject.trim()} (Zeichen: ${reference})`
-                : `Zeichen: ${reference}`;
-            }
-          }
-
-          // Compose-Details aktualisieren (Empfänger und möglicherweise Betreff)
-          const updateDetails = {
-            to: recipients,
-          };
-
-          // Betreff nur hinzufügen, wenn er geändert wurde
-          if (updatedSubject !== composeDetails.subject) {
-            updateDetails.subject = updatedSubject;
-          }
-
-          await browser.compose.setComposeDetails(tabId, updateDetails);
-
-          // Feedback-Nachricht vorbereiten
-          let feedbackMessage = `E-Mail-Adresse hinzugefügt: ${formattedRecipient}`;
-          if (reference && updatedSubject !== composeDetails.subject) {
-            feedbackMessage += `, Zeichen "${reference}" zum Betreff hinzugefügt`;
-          }
-
-          // Feedback anzeigen
-          const feedback = document.getElementById("feedback");
-          feedback.textContent = !emailExists
-            ? feedbackMessage
-            : `E-Mail-Adresse existiert bereits: ${email}${reference ? `, Zeichen "${reference}" zum Betreff hinzugefügt` : ""}`;
-          feedback.style.color = !emailExists ? "green" : "orange";
-
-          // Feedback nach 3 Sekunden zurücksetzen
-          setTimeout(() => {
-            feedback.textContent = "";
-          }, 3000);
-        } catch (error) {
-          console.error(
-            "Fehler beim Aktualisieren des Compose-Fensters:",
-            error,
-          );
-
-          // Fehlermeldung anzeigen
-          const feedback = document.getElementById("feedback");
-          feedback.textContent =
-            "Fehler beim Aktualisieren des Compose-Fensters";
-          feedback.style.color = "red";
-        }
-      });
+      div.appendChild(buttons);
 
       partiesListElement.appendChild(div);
     });
