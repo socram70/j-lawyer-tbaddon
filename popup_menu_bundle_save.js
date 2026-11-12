@@ -78,9 +78,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     logActivity("sendEmailToServer", "Daten aktualisiert");
   }
 
-  // Code für den recommendCaseButton
+  // Speicher-Buttons: der Modus kommt aus data-save-mode (full, messageOnly, attachmentsOnly, both)
+  const saveButtons = document.querySelectorAll(".button-row button[data-save-mode]");
   if (recommendCaseButton && customizableLabel) {
-    recommendCaseButton.addEventListener("click", function () {
+    saveButtons.forEach((saveButton) => saveButton.addEventListener("click", function () {
       if (!currentSelectedCase) {
         feedback.textContent = i18nMessage("noMatchingFileNumberFeedback");
         feedback.style.color = "red";
@@ -97,6 +98,7 @@ document.addEventListener("DOMContentLoaded", async function () {
             content: currentSelectedCase.fileNumber,
             selectedCaseFolderID: selectedCaseFolderID,
             selectedTags: getSelectedTagsForBundleSave(),
+            saveMode: saveButton.dataset.saveMode,
             username: result.username,
             password: result.password,
             serverAddress: result.serverAddress,
@@ -108,7 +110,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         });
       feedback.textContent = i18nMessage("sentToRecommendedCaseFeedback");
       feedback.style.color = "green";
-    });
+    }));
   }
 
   // Keep the tag selection local to this bundle save request.

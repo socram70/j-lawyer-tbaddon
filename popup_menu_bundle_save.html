@@ -58,6 +58,21 @@
                 color: white;
             }
 
+            #saveOnlyMessageButton {
+                background-color: #4caf50;
+                color: white;
+            }
+
+            #saveAttachmentsButton {
+                background-color: #cb1e1e;
+                color: white;
+            }
+
+            #saveBothButton {
+                background-color: #8b44ac;
+                color: white;
+            }
+
             #updateDataButton {
                 background-color: #f8f9fa;
                 color: #333;
@@ -198,7 +213,10 @@
                 flex-wrap: wrap;
             }
 
-            #recommendCaseButton {
+            #recommendCaseButton,
+            #saveOnlyMessageButton,
+            #saveAttachmentsButton,
+            #saveBothButton {
                 margin: 0;
                 flex: 1;
                 min-width: 120px;
@@ -315,7 +333,10 @@
             <p id="customizableLabel" data-i18n="noSuggestion">no suggestion</p>
 
             <div class="button-row">
-                <button id="recommendCaseButton" data-i18n="saveButton">Save</button>
+                <button id="recommendCaseButton" data-save-mode="full" data-i18n="saveButton">Save</button>
+                <button id="saveOnlyMessageButton" data-save-mode="messageOnly" data-i18n="saveMessageOnlyButton">Message only</button>
+                <button id="saveAttachmentsButton" data-save-mode="attachmentsOnly" data-i18n="saveAttachmentsOnlyButton">Attachments only</button>
+                <button id="saveBothButton" data-save-mode="both" data-i18n="saveMessageAndAttachmentsButton">Message and attachments</button>
             </div>
             <progress
                 id="progressBar"
