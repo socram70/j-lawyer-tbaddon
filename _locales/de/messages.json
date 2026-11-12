@@ -79,6 +79,18 @@
   "performOcrLabel": {
     "message": "OCR für neue Dokumente anstoßen, Bilder und PDFs"
   },
+  "archivedCaseWarning": {
+    "message": "Diese Akte ist abgelegt (archiviert)."
+  },
+  "reactivateCaseButton": {
+    "message": "Akte reaktivieren"
+  },
+  "caseReactivatedFeedback": {
+    "message": "Akte wurde reaktiviert."
+  },
+  "archivedCaseBadge": {
+    "message": "[abgelegt]"
+  },
   "subjectTemplateLabel": {
     "message": "Betreff-Vorlage für neue E-Mails, leer bedeutet Standard:"
   },

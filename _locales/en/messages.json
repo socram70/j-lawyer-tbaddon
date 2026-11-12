@@ -79,6 +79,18 @@
   "performOcrLabel": {
     "message": "Run OCR for new documents, images and PDFs"
   },
+  "archivedCaseWarning": {
+    "message": "This case is archived."
+  },
+  "reactivateCaseButton": {
+    "message": "Reactivate case"
+  },
+  "caseReactivatedFeedback": {
+    "message": "Case has been reactivated."
+  },
+  "archivedCaseBadge": {
+    "message": "[archived]"
+  },
   "subjectTemplateLabel": {
     "message": "Subject template for new emails, empty means default:"
   },
