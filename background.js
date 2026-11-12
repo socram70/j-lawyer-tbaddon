@@ -879,6 +879,7 @@ async function sendAttachmentsToServer(
     serverAddress,
     processedFiles,
     selectedTagsSnapshot,
+    messageData.id,
   );
 
   await browser.storage.local.remove("selectedTags");
@@ -2830,13 +2831,16 @@ async function sendAllMimePartsToServer(
   serverAddress,
   alreadyProcessedFiles = [],
   selectedTagsSnapshot = null,
+  messageId = null,
 ) {
   console.log("Case ID für MIME-Parts: " + caseId);
   console.log("Bereits verarbeitete Dateien:", alreadyProcessedFiles.length);
   const url = serverAddress + "/j-lawyer-io/rest/v1/cases/document/create";
 
-  // Nachrichteninhalt abrufen
-  const messageData = await getDisplayedMessageFromActiveTab();
+  // Verwende übergebene messageId oder hole sie vom aktiven Tab als Fallback
+  const messageData = messageId
+    ? await browser.messages.get(messageId)
+    : await getDisplayedMessageFromActiveTab();
   console.log("Message Id für MIME-Parts: " + messageData.id);
 
   // Vollständige MIME-Struktur abrufen
