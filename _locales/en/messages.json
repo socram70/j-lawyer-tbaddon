@@ -79,6 +79,24 @@
   "performOcrLabel": {
     "message": "Run OCR for new documents, images and PDFs"
   },
+  "excludeSmallImagesLabel": {
+    "message": "Skip small images when saving attachments separately (e.g. signature logos)"
+  },
+  "excludeSmallImagesMaxKbLabel": {
+    "message": "Size limit for small images in KB:"
+  },
+  "excludedExtensionsLabel": {
+    "message": "Never save these file extensions separately (comma-separated):"
+  },
+  "attachmentExclusionHint": {
+    "message": "Only applies when saving attachments separately, the saved email always stays complete."
+  },
+  "allAttachmentsExcludedFeedback": {
+    "message": "All attachments are excluded from saving by your settings."
+  },
+  "allAttachmentsExcludedMessageSavedFeedback": {
+    "message": "The message was saved, all attachments are excluded by your settings."
+  },
   "subjectTemplateLabel": {
     "message": "Subject template for new emails, empty means default:"
   },

@@ -22,6 +22,7 @@
   "background": {
     "scripts": [
       "i18n.js",
+      "attachment-filter.js",
       "background.js",
       "background_menu.js",
       "browser_action.js"

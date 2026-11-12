@@ -79,6 +79,24 @@
   "performOcrLabel": {
     "message": "OCR für neue Dokumente anstoßen, Bilder und PDFs"
   },
+  "excludeSmallImagesLabel": {
+    "message": "Kleine Bilder beim separaten Speichern von Anhängen überspringen (z. B. Signatur-Logos)"
+  },
+  "excludeSmallImagesMaxKbLabel": {
+    "message": "Grenze für kleine Bilder in KB:"
+  },
+  "excludedExtensionsLabel": {
+    "message": "Diese Dateiendungen nie separat speichern (kommagetrennt):"
+  },
+  "attachmentExclusionHint": {
+    "message": "Gilt nur für das separate Speichern von Anhängen, die gespeicherte E-Mail bleibt immer vollständig."
+  },
+  "allAttachmentsExcludedFeedback": {
+    "message": "Alle Anhänge sind laut Einstellungen vom Speichern ausgeschlossen."
+  },
+  "allAttachmentsExcludedMessageSavedFeedback": {
+    "message": "Die Nachricht wurde gespeichert, alle Anhänge sind laut Einstellungen ausgeschlossen."
+  },
   "subjectTemplateLabel": {
     "message": "Betreff-Vorlage für neue E-Mails, leer bedeutet Standard:"
   },

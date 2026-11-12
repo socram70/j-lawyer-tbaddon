@@ -30,6 +30,14 @@ document.getElementById("saveButton").addEventListener("click", async function (
   const performOcr = document.getElementById("performOcr").checked;
   const subjectTemplate = document.getElementById("subjectTemplate").value;
   const filenameTemplate = document.getElementById("filenameTemplate").value;
+  const excludeSmallImages =
+    document.getElementById("excludeSmallImages").checked;
+  const excludeSmallImagesMaxKb =
+    parseInt(document.getElementById("excludeSmallImagesMaxKb").value, 10) ||
+    DEFAULT_EXCLUDE_SMALL_IMAGES_MAX_KB;
+  const excludedExtensions = parseExcludedExtensions(
+    document.getElementById("excludedExtensions").value,
+  ).join(", ");
 
   try {
     const hasServerPermission = await requestServerPermission(serverAddress);
@@ -51,6 +59,9 @@ document.getElementById("saveButton").addEventListener("click", async function (
       performOcr: performOcr,
       subjectTemplate: subjectTemplate,
       filenameTemplate: filenameTemplate,
+      excludeSmallImages: excludeSmallImages,
+      excludeSmallImagesMaxKb: excludeSmallImagesMaxKb,
+      excludedExtensions: excludedExtensions,
     })
     .then(() => {
       document.getElementById("saveButton").value =
@@ -152,6 +163,9 @@ document.addEventListener("DOMContentLoaded", function () {
       "performOcr",
       "subjectTemplate",
       "filenameTemplate",
+      "excludeSmallImages",
+      "excludeSmallImagesMaxKb",
+      "excludedExtensions",
     ])
     .then((result) => {
       document.getElementById("username").value = result.username || "";
@@ -168,5 +182,11 @@ document.addEventListener("DOMContentLoaded", function () {
         result.subjectTemplate || "";
       document.getElementById("filenameTemplate").value =
         result.filenameTemplate || "";
+      document.getElementById("excludeSmallImages").checked =
+        result.excludeSmallImages || false;
+      document.getElementById("excludeSmallImagesMaxKb").value =
+        result.excludeSmallImagesMaxKb || DEFAULT_EXCLUDE_SMALL_IMAGES_MAX_KB;
+      document.getElementById("excludedExtensions").value =
+        result.excludedExtensions || "";
     });
 });

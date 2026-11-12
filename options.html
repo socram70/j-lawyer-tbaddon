@@ -150,6 +150,26 @@
                     >
                 </div>
 
+                <div class="checkbox-row">
+                    <input type="checkbox" id="excludeSmallImages" />
+                    <label for="excludeSmallImages"
+                        data-i18n="excludeSmallImagesLabel">Skip small images when saving attachments separately (e.g. signature logos)</label
+                    >
+                </div>
+
+                <label for="excludeSmallImagesMaxKb"
+                    data-i18n="excludeSmallImagesMaxKbLabel">Size limit for small images in KB:</label
+                >
+                <input type="text" id="excludeSmallImagesMaxKb" placeholder="20" /><br /><br />
+
+                <label for="excludedExtensions"
+                    data-i18n="excludedExtensionsLabel">Never save these file extensions separately (comma-separated):</label
+                >
+                <input type="text" id="excludedExtensions" placeholder="p7s, vcf" /><br />
+                <small style="color: #666; display: block; margin-bottom: 15px" data-i18n="attachmentExclusionHint">
+                    Only applies when saving attachments separately, the saved email always stays complete.
+                </small>
+
                 <label for="subjectTemplate"
                     data-i18n="subjectTemplateLabel">Subject template for new emails, empty means default:</label
                 >
@@ -201,6 +221,7 @@
         </div>
 
         <script src="i18n.js"></script>
+        <script src="attachment-filter.js"></script>
         <script src="options.js"></script>
     </body>
 </html>

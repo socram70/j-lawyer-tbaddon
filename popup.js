@@ -361,12 +361,18 @@ document.addEventListener("DOMContentLoaded", async function () {
           "serverAddress",
         ]);
         const messageData = await getDisplayedMessageFromActiveTab();
-        const attachments = await browser.messages.listAttachments(
-          messageData.id,
-        );
+        const { included: attachments, excluded: excludedAttachments } =
+          splitExcludedAttachments(
+            await browser.messages.listAttachments(messageData.id),
+            await loadAttachmentExclusionSettings(),
+          );
 
         if (attachments.length === 0) {
-          feedback.textContent = i18nMessage("noAttachmentsFeedback");
+          feedback.textContent = i18nMessage(
+            excludedAttachments.length > 0
+              ? "allAttachmentsExcludedFeedback"
+              : "noAttachmentsFeedback",
+          );
           feedback.style.color = "red";
           return;
         }
@@ -537,14 +543,18 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
 
         // Anhänge prüfen
-        const attachments = await browser.messages.listAttachments(
-          messageData.id,
-        );
+        const { included: attachments, excluded: excludedAttachments } =
+          splitExcludedAttachments(
+            await browser.messages.listAttachments(messageData.id),
+            await loadAttachmentExclusionSettings(),
+          );
 
         if (attachments.length === 0) {
           await browser.storage.local.remove("selectedTags");
           feedback.textContent = i18nMessage(
-            "noAttachmentsMessageSavedFeedback",
+            excludedAttachments.length > 0
+              ? "allAttachmentsExcludedMessageSavedFeedback"
+              : "noAttachmentsMessageSavedFeedback",
           );
           feedback.style.color = "goldenrod";
         } else {
