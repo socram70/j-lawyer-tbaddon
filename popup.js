@@ -986,33 +986,6 @@ function matchSenderWithCaseName(sender, caseName) {
   return 0; // Kein Match
 }
 
-// Hilfsfunktion: Extrahiert potenzielle Aktenzeichen aus Text mit Regex-Mustern
-function extractFileNumberPatterns(text) {
-  const patterns = [
-    // AZ: / Az.: / Aktenzeichen Präfixe mit verschiedenen Formaten
-    /(?:AZ|Az|Aktenzeichen)[:\.\s]+([0-9]{1,4}[\/\-_][0-9]{1,6}(?:[\/\-_][A-Za-z0-9]+)?)/gi,
-    // Bracket-Format: [2024/123] oder [2024-123-ABC]
-    /\[([0-9]{1,4}[\/\-_][0-9]{1,6}(?:[\/\-_][A-Za-z0-9]+)?)\]/g,
-    // Jahr/Nummer Format (häufigster Fall): 2024/123 oder 2024-123 etc.
-    /\b([0-9]{2,4}[\/\-_][0-9]{1,6}(?:[\/\-_][A-Za-z0-9]+)?)\b/g,
-  ];
-
-  const extractedNumbers = new Set();
-
-  for (const pattern of patterns) {
-    let match;
-    while ((match = pattern.exec(text)) !== null) {
-      // Match kann in Gruppe 1 sein (bei Präfix-Patterns) oder Gruppe 0 (bei direkten Patterns)
-      const fileNumber = match[1] || match[0];
-      if (fileNumber && fileNumber.trim()) {
-        extractedNumbers.add(fileNumber.trim());
-      }
-    }
-  }
-
-  return Array.from(extractedNumbers);
-}
-
 function decodeMimeEncodedWordCharset(bytes, charset) {
   try {
     return new TextDecoder(charset || "utf-8").decode(bytes);
@@ -1447,115 +1420,16 @@ async function findFileNumberInRawMessage() {
     emailStructure.headers?.substring(0, 200),
   );
 
-  // Aktenzeichen-Muster aus der E-Mail extrahieren
-  // Priorisiere Betreff > Header > Body
-  const searchTexts = [
-    emailStructure.subject,
-    emailStructure.headers,
-    emailStructure.bodyStart,
-  ].filter((t) => t);
-
-  const extractedPatterns = new Set();
-  for (const text of searchTexts) {
-    const patterns = extractFileNumberPatterns(text);
-    patterns.forEach((p) => extractedPatterns.add(p));
-  }
-
-  console.log(
-    "Extrahierte Aktenzeichen-Muster:",
-    Array.from(extractedPatterns),
+  // Aktenzeichen in Betreff, Header und Textanfang sowie Akten des Absenders suchen
+  const topMatches = await collectCaseSuggestions(
+    {
+      subject: emailStructure.subject || "",
+      texts: [emailStructure.headers, emailStructure.bodyStart],
+      contactEmails: [extractEmailAddress(messageData.author)],
+      contactLocation: "Absender",
+    },
+    loginData,
   );
-
-  // Wenn keine Muster gefunden, versuche den Betreff direkt zu suchen (falls >= 3 Zeichen)
-  if (
-    extractedPatterns.size === 0 &&
-    emailStructure.subject &&
-    emailStructure.subject.length >= 3
-  ) {
-    console.log(
-      "Keine Muster gefunden, versuche Betreff-Suche:",
-      emailStructure.subject,
-    );
-    extractedPatterns.add(emailStructure.subject);
-  }
-
-  // Für jedes gefundene Muster eine API-Suche durchführen
-  const allResults = [];
-  const seenIds = new Set();
-
-  for (const pattern of extractedPatterns) {
-    // API erfordert mindestens 3 Zeichen
-    if (pattern.length >= 3) {
-      try {
-        const results = await searchCasesApi(
-          loginData.username,
-          loginData.password,
-          loginData.serverAddress,
-          pattern,
-        );
-
-        // Ergebnisse hinzufügen, Duplikate vermeiden
-        for (const result of results) {
-          if (!seenIds.has(result.id)) {
-            seenIds.add(result.id);
-            // Prüfe ob das Aktenzeichen exakt im Betreff vorkommt (höchste Priorität)
-            const inSubject = emailStructure.subjectLower.includes(
-              result.fileNumber.toLowerCase(),
-            );
-            allResults.push({
-              item: result,
-              score: inSubject ? 100 : 50,
-              confidence: inSubject ? 95 : 70,
-              location: inSubject ? "Betreff" : "E-Mail",
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Fehler bei API-Suche für Muster:", pattern, error);
-      }
-    }
-  }
-
-  // Akten über die Absender-Adresse finden (Beteiligte mit dieser E-Mail-Adresse)
-  try {
-    const senderEmail = extractEmailAddress(messageData.author);
-    const senderCases = await findCasesByContactEmail(senderEmail, loginData);
-    // Zuletzt geänderte Akten zuerst, ein einzelner Treffer ist aussagekräftiger
-    senderCases.sort((a, b) =>
-      (b.dateChanged || "").localeCompare(a.dateChanged || ""),
-    );
-    const isUniqueSenderCase = senderCases.length === 1;
-
-    for (const senderCase of senderCases) {
-      const existingResult = allResults.find(
-        (result) => result.item.id === senderCase.id,
-      );
-      if (existingResult) {
-        // Aktenzeichen-Treffer und Absender bestätigen sich gegenseitig
-        existingResult.score = Math.min(existingResult.score + 30, 100);
-        existingResult.confidence = Math.min(existingResult.confidence + 15, 99);
-        existingResult.location += " + Absender";
-        continue;
-      }
-      seenIds.add(senderCase.id);
-      allResults.push({
-        item: senderCase,
-        score: isUniqueSenderCase ? 60 : 40,
-        confidence: isUniqueSenderCase ? 80 : 60,
-        location: "Absender",
-      });
-    }
-  } catch (error) {
-    console.error("Fehler bei der Absender-Suche:", error);
-  }
-
-  // Sortiere nach Score (stabil, Absender-Treffer bleiben nach Änderungsdatum sortiert)
-  allResults.sort((a, b) => b.score - a.score);
-
-  // Begrenze auf Top 3
-  const topMatches = allResults.slice(0, 3);
-
-  console.log("Gefundene Matches:", topMatches);
 
   // Zeige Vorschläge im UI
   displaySuggestions(topMatches, loginData);
