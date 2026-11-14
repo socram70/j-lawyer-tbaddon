@@ -118,6 +118,12 @@ async function collectCaseSuggestions(
     }
   }
 
+  // Passt ein Aktenzeichen aus dem Betreff, hat es Vorrang: Adressen bestätigen dann nur noch,
+  // statt weitere Akten vorzuschlagen (z. B. Rechtsschutzversicherung in vielen Akten)
+  const hasSubjectFileNumberMatch = allResults.some(
+    (entry) => entry.location === "Betreff",
+  );
+
   for (const contactCases of contactResults) {
     // Zuletzt geänderte Akten zuerst, ein einzelner Treffer ist aussagekräftiger
     contactCases.sort((a, b) =>
@@ -134,6 +140,9 @@ async function collectCaseSuggestions(
           existingResult.confidence = Math.min(existingResult.confidence + 15, 99);
           existingResult.location += " + " + contactLocation;
         }
+        continue;
+      }
+      if (hasSubjectFileNumberMatch) {
         continue;
       }
       const entry = {
