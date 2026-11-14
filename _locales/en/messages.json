@@ -89,7 +89,7 @@
     "message": "Case has been reactivated."
   },
   "archivedCaseBadge": {
-    "message": "[archived]"
+    "message": "(archived)"
   },
   "subjectTemplateLabel": {
     "message": "Subject template for new emails, empty means default:"
