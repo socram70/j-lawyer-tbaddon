@@ -871,6 +871,8 @@ async function getPartiesInCase(caseId, username, password, serverAddress) {
 }
 
 // Funktion zum Anzeigen der Beteiligten einer Akte
+const RECIPIENT_FIELDS = ["to", "cc", "bcc"];
+
 function getRecipientEmail(recipient) {
   if (typeof recipient !== "string") {
     return null;
@@ -879,79 +881,78 @@ function getRecipientEmail(recipient) {
   return (match ? match[1] : recipient).trim().toLowerCase();
 }
 
-// Fügt Beteiligte in An/CC/BCC des aktiven Compose-Fensters ein ({ party, field }),
-// ohne Adressen zu doppeln, und ergänzt deren Zeichen im Betreff
-async function addPartiesToRecipients(entries) {
+async function getActiveComposeTabId() {
+  const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+  if (tabs.length === 0) {
+    console.log("Kein aktiver Tab gefunden.");
+    return null;
+  }
+  return tabs[0].id;
+}
+
+function getRecipientLists(composeDetails) {
+  const lists = {};
+  for (const field of RECIPIENT_FIELDS) {
+    const value = composeDetails[field] || [];
+    lists[field] = Array.isArray(value) ? [...value] : [value];
+  }
+  return lists;
+}
+
+// Feld (to/cc/bcc), in dem die Adresse aktuell steht, oder null
+function findRecipientField(recipientLists, email) {
+  for (const field of RECIPIENT_FIELDS) {
+    if (recipientLists[field].some((r) => getRecipientEmail(r) === email)) {
+      return field;
+    }
+  }
+  return null;
+}
+
+// Erneuter Klick auf das aktuelle Feld entfernt den Beteiligten, ein anderes Feld verschiebt ihn dorthin
+async function toggleRecipient(party, field) {
   const feedback = document.getElementById("feedback");
   try {
-    const tabs = await browser.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
-    if (tabs.length === 0) {
-      console.log("Kein aktiver Tab gefunden.");
+    const tabId = await getActiveComposeTabId();
+    if (tabId === null) {
       return;
     }
-    const tabId = tabs[0].id;
     const composeDetails = await browser.compose.getComposeDetails(tabId);
+    const recipientLists = getRecipientLists(composeDetails);
+    const email = party.email.trim().toLowerCase();
+    const currentField = findRecipientField(recipientLists, email);
 
-    const recipientsByField = {};
-    const existingEmails = new Set();
-    for (const field of RECIPIENT_FIELDS) {
-      const value = composeDetails[field] || [];
-      recipientsByField[field] = Array.isArray(value) ? [...value] : [value];
-      recipientsByField[field].forEach((recipient) => {
-        const email = getRecipientEmail(recipient);
-        if (email) {
-          existingEmails.add(email);
-        }
-      });
+    for (const listField of RECIPIENT_FIELDS) {
+      recipientLists[listField] = recipientLists[listField].filter(
+        (r) => getRecipientEmail(r) !== email,
+      );
     }
 
-    let updatedSubject = composeDetails.subject || "";
-    const added = [];
-    const skipped = [];
-    for (const { party, field } of entries) {
-      const email = party.email.trim().toLowerCase();
-      if (existingEmails.has(email)) {
-        skipped.push(party.email);
-      } else {
-        existingEmails.add(email);
-        recipientsByField[field].push(`${party.displayName} <${party.email}>`);
-        added.push(`${i18nMessage(`recipientField_${field}`)}: ${party.displayName}`);
-      }
+    const updateDetails = { ...recipientLists };
+    const fieldLabel = i18nMessage(`recipientField_${field}`);
+    let message;
+    if (currentField === field) {
+      message = i18nMessage("recipientRemovedFeedback", [party.displayName]);
+    } else {
+      recipientLists[field].push(`${party.displayName} <${party.email}>`);
+      message = i18nMessage("recipientAddedFeedback", [
+        `${fieldLabel}: ${party.displayName}`,
+      ]);
 
       // Zeichen des Beteiligten zum Betreff hinzufügen, falls noch nicht enthalten
-      if (party.reference && !updatedSubject.includes(party.reference)) {
-        updatedSubject = updatedSubject.trim()
-          ? `${updatedSubject.trim()} (Zeichen: ${party.reference})`
+      const subject = composeDetails.subject || "";
+      if (party.reference && !subject.includes(party.reference)) {
+        updateDetails.subject = subject.trim()
+          ? `${subject.trim()} (Zeichen: ${party.reference})`
           : `Zeichen: ${party.reference}`;
       }
     }
 
-    const updateDetails = {};
-    for (const field of RECIPIENT_FIELDS) {
-      updateDetails[field] = recipientsByField[field];
-    }
-    if (updatedSubject !== (composeDetails.subject || "")) {
-      updateDetails.subject = updatedSubject;
-    }
     await browser.compose.setComposeDetails(tabId, updateDetails);
+    await refreshRecipientHighlights();
 
-    if (entries.length === 0) {
-      feedback.textContent = i18nMessage("noRecipientsToAssign");
-      feedback.style.color = "orange";
-    } else if (added.length > 0) {
-      feedback.textContent = i18nMessage("recipientsAddedFeedback", [
-        added.join(", "),
-      ]);
-      feedback.style.color = "green";
-    } else {
-      feedback.textContent = i18nMessage("recipientsAlreadyPresentFeedback", [
-        skipped.join(", "),
-      ]);
-      feedback.style.color = "orange";
-    }
+    feedback.textContent = message;
+    feedback.style.color = "green";
     setTimeout(() => {
       feedback.textContent = "";
     }, 3000);
@@ -961,6 +962,62 @@ async function addPartiesToRecipients(entries) {
     feedback.style.color = "red";
   }
 }
+
+// Entfernt alle Empfänger aus An, CC und BCC
+async function resetRecipients() {
+  const feedback = document.getElementById("feedback");
+  try {
+    const tabId = await getActiveComposeTabId();
+    if (tabId === null) {
+      return;
+    }
+    await browser.compose.setComposeDetails(tabId, { to: [], cc: [], bcc: [] });
+    await refreshRecipientHighlights();
+    feedback.textContent = i18nMessage("recipientsResetFeedback");
+    feedback.style.color = "green";
+    setTimeout(() => {
+      feedback.textContent = "";
+    }, 3000);
+  } catch (error) {
+    console.error("Fehler beim Zurücksetzen der Empfänger:", error);
+    feedback.textContent = i18nMessage("errorPrefix", [error.message]);
+    feedback.style.color = "red";
+  }
+}
+
+// Hebt bei jedem Beteiligten den Button des Feldes hervor, in dem er gerade steht
+async function refreshRecipientHighlights() {
+  const partyItems = document.querySelectorAll(".partyItem[data-email]");
+  if (partyItems.length === 0) {
+    return;
+  }
+  const tabId = await getActiveComposeTabId();
+  if (tabId === null) {
+    return;
+  }
+  const recipientLists = getRecipientLists(
+    await browser.compose.getComposeDetails(tabId),
+  );
+  partyItems.forEach((item) => {
+    const currentField = findRecipientField(recipientLists, item.dataset.email);
+    item.classList.toggle("isRecipient", currentField !== null);
+    item.querySelectorAll("button[data-field]").forEach((button) => {
+      button.classList.toggle("active", button.dataset.field === currentField);
+    });
+  });
+}
+
+// Empfänger können auch direkt im Compose-Fenster geändert werden, daher regelmäßig abgleichen
+window.addEventListener("focus", () => {
+  refreshRecipientHighlights().catch((error) =>
+    console.error("Fehler beim Abgleich der Empfänger:", error),
+  );
+});
+setInterval(() => {
+  refreshRecipientHighlights().catch((error) =>
+    console.error("Fehler beim Abgleich der Empfänger:", error),
+  );
+}, 2000);
 
 async function displayParties(caseId) {
   try {
@@ -1035,32 +1092,19 @@ async function displayParties(caseId) {
       return nameA.localeCompare(nameB);
     });
 
-    // Button "Automatisch zuordnen" (Zuordnung je Beteiligtentyp aus den Einstellungen)
-    const autoAssignButton = document.createElement("button");
-    autoAssignButton.type = "button";
-    autoAssignButton.className = "autoAssignRecipientsButton";
-    autoAssignButton.textContent = i18nMessage("autoAssignRecipientsButton");
-    autoAssignButton.addEventListener("click", async function () {
-      const { recipientRoleMapping } = await browser.storage.local.get(
-        "recipientRoleMapping",
-      );
-      const entries = partiesWithEmails
-        .map((party) => ({
-          party,
-          field: getRecipientFieldForPartyType(
-            party.involvementType,
-            recipientRoleMapping,
-          ),
-        }))
-        .filter((entry) => entry.field !== "none");
-      await addPartiesToRecipients(entries);
-    });
-    partiesListElement.appendChild(autoAssignButton);
+    // Button "Empfänger zurücksetzen"
+    const resetButton = document.createElement("button");
+    resetButton.type = "button";
+    resetButton.className = "resetRecipientsButton";
+    resetButton.textContent = i18nMessage("resetRecipientsButton");
+    resetButton.addEventListener("click", resetRecipients);
+    partiesListElement.appendChild(resetButton);
 
     // Beteiligten-Liste erstellen
     partiesWithEmails.forEach((party) => {
       const div = document.createElement("div");
       div.className = "partyItem";
+      div.dataset.email = party.email.trim().toLowerCase();
 
       // Namen formatieren
       let displayName = party.name;
@@ -1081,13 +1125,11 @@ async function displayParties(caseId) {
         referenceInfo = ` - Zeichen: ${party.reference}`;
       }
 
-      // Klick auf den Namen fügt wie bisher als "An" hinzu
+      // Klick auf den Namen wirkt wie der Button "An"
       const label = document.createElement("span");
       label.className = "partyLabel";
       label.textContent = `${displayName}${involvementBadge}${referenceInfo} (${party.email})`;
-      label.addEventListener("click", () =>
-        addPartiesToRecipients([{ party, field: "to" }]),
-      );
+      label.addEventListener("click", () => toggleRecipient(party, "to"));
       div.appendChild(label);
 
       // Buttons für An / CC / BCC
@@ -1096,10 +1138,11 @@ async function displayParties(caseId) {
       for (const field of RECIPIENT_FIELDS) {
         const button = document.createElement("button");
         button.type = "button";
+        button.dataset.field = field;
         button.textContent = i18nMessage(`recipientField_${field}`);
         button.addEventListener("click", (event) => {
           event.stopPropagation();
-          addPartiesToRecipients([{ party, field }]);
+          toggleRecipient(party, field);
         });
         buttons.appendChild(button);
       }
@@ -1107,6 +1150,7 @@ async function displayParties(caseId) {
 
       partiesListElement.appendChild(div);
     });
+    await refreshRecipientHighlights();
   } catch (error) {
     console.error("Fehler beim Anzeigen der Beteiligten:", error);
 

@@ -295,7 +295,16 @@
                 font-size: 11px;
             }
 
-            .autoAssignRecipientsButton {
+            .partyRecipientButtons button.active {
+                background-color: #2196f3;
+                color: white;
+            }
+
+            .partyItem.isRecipient {
+                background-color: #e3f2fd;
+            }
+
+            .resetRecipientsButton {
                 margin: 0 0 8px 0;
             }
         </style>
@@ -558,7 +567,6 @@
         </div>
 
         <script src="i18n.js"></script>
-        <script src="recipient-roles.js"></script>
         <script src="popup_compose.js"></script>
     </body>
 </html>

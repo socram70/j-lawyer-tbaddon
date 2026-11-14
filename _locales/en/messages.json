@@ -79,9 +79,6 @@
   "performOcrLabel": {
     "message": "Run OCR for new documents, images and PDFs"
   },
-  "autoAssignRecipientsButton": {
-    "message": "Assign automatically"
-  },
   "recipientField_to": {
     "message": "To"
   },
@@ -91,33 +88,27 @@
   "recipientField_bcc": {
     "message": "BCC"
   },
-  "recipientField_none": {
-    "message": "do not assign"
+  "resetRecipientsButton": {
+    "message": "Reset recipients"
   },
-  "recipientsAddedFeedback": {
-    "message": "Added: $ITEMS$",
+  "recipientAddedFeedback": {
+    "message": "Added: $ITEM$",
     "placeholders": {
-      "items": {
+      "item": {
         "content": "$1"
       }
     }
   },
-  "recipientsAlreadyPresentFeedback": {
-    "message": "Already a recipient: $ITEMS$",
+  "recipientRemovedFeedback": {
+    "message": "Removed: $ITEM$",
     "placeholders": {
-      "items": {
+      "item": {
         "content": "$1"
       }
     }
   },
-  "noRecipientsToAssign": {
-    "message": "According to your settings, no party of this case is assigned automatically."
-  },
-  "recipientRoleMappingLabel": {
-    "message": "Automatic recipient assignment by party type:"
-  },
-  "recipientRoleMappingLoadError": {
-    "message": "Party types could not be loaded from the server, only the default types are shown."
+  "recipientsResetFeedback": {
+    "message": "All recipients have been removed."
   },
   "subjectTemplateLabel": {
     "message": "Subject template for new emails, empty means default:"
