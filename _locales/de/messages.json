@@ -40,9 +40,6 @@
   "composePopupTitle": {
     "message": "j-lawyer – Verfassen"
   },
-  "composePopupHeading": {
-    "message": "✉ Verfassen"
-  },
   "composeNoSubject": {
     "message": "(kein Betreff)"
   },

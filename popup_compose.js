@@ -965,15 +965,14 @@ async function resetRecipients() {
   }
 }
 
-// Zeigt den aktuellen Betreff im Kopfbalken und Fenstertitel, damit klar ist, zu welcher Nachricht das Fenster gehört
-async function refreshComposeHeader() {
+// Zeigt den aktuellen Betreff im Fenstertitel, damit klar ist, zu welcher Nachricht das Fenster gehört
+async function refreshComposeTitle() {
   const tabId = await getActiveComposeTabId();
   if (tabId === null) {
     return;
   }
   const { subject } = await browser.compose.getComposeDetails(tabId);
   const subjectText = subject || i18nMessage("composeNoSubject");
-  document.getElementById("composeHeaderSubject").textContent = subjectText;
   document.title = `${i18nMessage("composePopupTitle")}: ${subjectText}`;
 }
 
@@ -1009,13 +1008,13 @@ setInterval(() => {
   refreshRecipientHighlights().catch((error) =>
     console.error("Fehler beim Abgleich der Empfänger:", error),
   );
-  refreshComposeHeader().catch((error) =>
-    console.error("Fehler beim Aktualisieren des Kopfbalkens:", error),
+  refreshComposeTitle().catch((error) =>
+    console.error("Fehler beim Aktualisieren des Fenstertitels:", error),
   );
 }, 2000);
 document.addEventListener("DOMContentLoaded", () => {
-  refreshComposeHeader().catch((error) =>
-    console.error("Fehler beim Aktualisieren des Kopfbalkens:", error),
+  refreshComposeTitle().catch((error) =>
+    console.error("Fehler beim Aktualisieren des Fenstertitels:", error),
   );
 });
 
