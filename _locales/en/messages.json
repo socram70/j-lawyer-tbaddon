@@ -107,7 +107,7 @@
     "message": "Case has been reactivated."
   },
   "archivedCaseBadge": {
-    "message": "[archived]"
+    "message": "(archived)"
   },
   "recipientField_to": {
     "message": "To"

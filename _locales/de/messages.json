@@ -98,7 +98,7 @@
     "message": "Die Nachricht wurde gespeichert, alle Anhänge sind laut Einstellungen ausgeschlossen."
   },
   "archivedCaseWarning": {
-    "message": "Diese Akte ist abgelegt (archiviert)."
+    "message": "Diese Akte ist archiviert."
   },
   "reactivateCaseButton": {
     "message": "Akte reaktivieren"
@@ -107,7 +107,7 @@
     "message": "Akte wurde reaktiviert."
   },
   "archivedCaseBadge": {
-    "message": "[abgelegt]"
+    "message": "(archiviert)"
   },
   "recipientField_to": {
     "message": "An"
