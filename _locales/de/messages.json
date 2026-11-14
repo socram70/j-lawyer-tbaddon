@@ -35,7 +35,16 @@
     }
   },
   "popupTitle": {
-    "message": "Eingabe"
+    "message": "j-lawyer – Posteingang"
+  },
+  "composePopupTitle": {
+    "message": "j-lawyer – Verfassen"
+  },
+  "composePopupHeading": {
+    "message": "✉ Verfassen"
+  },
+  "composeNoSubject": {
+    "message": "(kein Betreff)"
   },
   "bundlePopupTitle": {
     "message": "Nachrichten Zuordnung - mehrere Nachrichten"

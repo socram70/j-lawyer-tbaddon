@@ -2,7 +2,7 @@
 <html>
     <head>
         <meta charset="UTF-8" />
-        <title data-i18n="popupTitle">Input</title>
+        <title data-i18n="composePopupTitle">j-lawyer – Compose</title>
         <style>
             /* Grundlegende Stilrichtlinien für das gesamte Popup */
             html {
@@ -505,6 +505,34 @@
         </style>
         <style>
             /* Ergänzungen für das Verfassen-Fenster */
+            #composeHeader {
+                display: flex;
+                align-items: baseline;
+                gap: 10px;
+                padding: 8px 14px;
+                margin-bottom: 12px;
+                border-radius: 10px;
+                background: linear-gradient(135deg, #2e7d32 0%, #43a047 100%);
+                color: white;
+                font-weight: 600;
+                font-size: 14px;
+                flex-shrink: 0;
+                box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            }
+
+            #composeHeaderSubject {
+                font-weight: 400;
+                opacity: 0.9;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                min-width: 0;
+            }
+
+            #feedbackContainer {
+                border-top-color: #43a047;
+            }
+
             .suggestionItem.noMatch:hover {
                 transform: none;
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -618,6 +646,10 @@
     </head>
 
     <body>
+        <div id="composeHeader">
+            <span data-i18n="composePopupHeading">✉ Compose</span>
+            <span id="composeHeaderSubject"></span>
+        </div>
         <div id="feedbackContainer">
             <!-- Eingabefeld für die Suche und die Ergebnisliste -->
             <input
