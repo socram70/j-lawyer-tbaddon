@@ -106,14 +106,24 @@ async function createThunderbirdMessageTag(tagName, tagColor) {
 }
 
 async function getOrCreateThunderbirdMessageTag(tagName, tagColor) {
-  const existingTags = await listThunderbirdMessageTags();
-  const tag = existingTags.find((existingTag) => existingTag.tag === tagName);
+  const tagKey = getSafeMessageTagKey(tagName);
+  const findTag = (tags) =>
+    tags.find((existingTag) => existingTag.tag === tagName) ||
+    tags.find((existingTag) => existingTag.key === tagKey);
 
-  if (tag) {
-    return tag;
+  const existingTag = findTag(await listThunderbirdMessageTags());
+  if (existingTag) {
+    return existingTag;
   }
 
-  return createThunderbirdMessageTag(tagName, tagColor);
+  // tags.create() liefert kein MessageTag-Objekt zurück, daher neu auslesen
+  await createThunderbirdMessageTag(tagName, tagColor);
+  const createdTag = findTag(await listThunderbirdMessageTags());
+  if (!createdTag || !createdTag.key) {
+    throw new Error(`Thunderbird-Tag "${tagName}" konnte nicht angelegt werden.`);
+  }
+
+  return createdTag;
 }
 
 if (typeof document !== "undefined") {
