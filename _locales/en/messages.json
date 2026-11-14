@@ -35,7 +35,16 @@
     }
   },
   "popupTitle": {
-    "message": "Input"
+    "message": "j-lawyer – Inbox"
+  },
+  "composePopupTitle": {
+    "message": "j-lawyer – Compose"
+  },
+  "composePopupHeading": {
+    "message": "✉ Compose"
+  },
+  "composeNoSubject": {
+    "message": "(no subject)"
   },
   "bundlePopupTitle": {
     "message": "Message assignment - multiple messages"

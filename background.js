@@ -238,11 +238,25 @@ browser.composeAction.onClicked.addListener(async (tab) => {
   const width = savedSize.composePopupWindowSize?.width || 900;
   const height = savedSize.composePopupWindowSize?.height || 700;
 
+  // Position wird nicht gespeichert, sondern rechts oben am Verfassen-Fenster ausgerichtet
+  const position = {};
+  try {
+    const composeWindow = await browser.windows.get(tab.windowId);
+    position.left = Math.max(
+      composeWindow.left,
+      composeWindow.left + composeWindow.width - width - 20,
+    );
+    position.top = composeWindow.top + 80;
+  } catch (error) {
+    console.error("Position des Verfassen-Fensters unbekannt:", error);
+  }
+
   const newWindow = await browser.windows.create({
     url: browser.runtime.getURL(`popup_compose.html?composeTabId=${tab.id}`),
     type: "popup",
     width: width,
     height: height,
+    ...position,
   });
   composePopupWindowIds.set(tab.id, newWindow.id);
 });
