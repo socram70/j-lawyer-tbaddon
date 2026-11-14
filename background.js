@@ -219,6 +219,56 @@ browser.windows.onRemoved.addListener((windowId) => {
   }
 });
 
+// Compose Action - öffnet popup_compose.html je Compose-Tab in eigenständigem Fenster
+const composePopupWindowIds = new Map(); // composeTabId -> windowId
+
+browser.composeAction.onClicked.addListener(async (tab) => {
+  const existingWindowId = composePopupWindowIds.get(tab.id);
+  if (existingWindowId !== undefined) {
+    try {
+      await browser.windows.update(existingWindowId, { focused: true });
+      return;
+    } catch (e) {
+      // Fenster existiert nicht mehr
+      composePopupWindowIds.delete(tab.id);
+    }
+  }
+
+  const savedSize = await browser.storage.local.get("composePopupWindowSize");
+  const width = savedSize.composePopupWindowSize?.width || 900;
+  const height = savedSize.composePopupWindowSize?.height || 700;
+
+  const newWindow = await browser.windows.create({
+    url: browser.runtime.getURL(`popup_compose.html?composeTabId=${tab.id}`),
+    type: "popup",
+    width: width,
+    height: height,
+  });
+  composePopupWindowIds.set(tab.id, newWindow.id);
+});
+
+browser.windows.onRemoved.addListener((windowId) => {
+  for (const [composeTabId, popupId] of composePopupWindowIds) {
+    if (popupId === windowId) {
+      composePopupWindowIds.delete(composeTabId);
+    }
+  }
+});
+
+// Wird das Compose-Fenster geschlossen (z. B. nach dem Senden), schließt auch das zugehörige Popup
+browser.tabs.onRemoved.addListener(async (tabId) => {
+  const popupId = composePopupWindowIds.get(tabId);
+  if (popupId === undefined) {
+    return;
+  }
+  composePopupWindowIds.delete(tabId);
+  try {
+    await browser.windows.remove(popupId);
+  } catch (error) {
+    console.error("Compose-Popup konnte nicht geschlossen werden:", error);
+  }
+});
+
 async function closeMainPopupForMultiSelection(selectedMessages) {
   const selectedCount = selectedMessages?.messages?.length || 0;
 
