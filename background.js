@@ -698,6 +698,26 @@ async function sendAttachmentsToServer(
   let attachments = await browser.messages.listAttachments(messageData.id);
   console.log("Attachments gefunden:", attachments.length);
 
+  // In den Einstellungen ausgeschlossene Anhänge überspringen
+  const exclusionSettings = await loadAttachmentExclusionSettings();
+  const { included, excluded } = splitExcludedAttachments(
+    attachments,
+    exclusionSettings,
+  );
+  if (excluded.length > 0) {
+    await logActivity("sendAttachmentsToServer", {
+      excludedAttachments: excluded,
+    });
+  }
+  if (attachments.length > 0 && included.length === 0) {
+    browser.runtime.sendMessage({
+      type: "error",
+      content: i18nMessage("allAttachmentsExcludedFeedback"),
+    });
+    return;
+  }
+  attachments = included;
+
   // Überprüfen, ob Attachments vorhanden sind
   if (attachments.length === 0) {
     console.log("Keine Attachments in der Nachricht vorhanden.");
@@ -880,6 +900,7 @@ async function sendAttachmentsToServer(
     processedFiles,
     selectedTagsSnapshot,
     messageData.id,
+    exclusionSettings,
   );
 
   await browser.storage.local.remove("selectedTags");
@@ -2832,6 +2853,7 @@ async function sendAllMimePartsToServer(
   alreadyProcessedFiles = [],
   selectedTagsSnapshot = null,
   messageId = null,
+  exclusionSettings = null,
 ) {
   console.log("Case ID für MIME-Parts: " + caseId);
   console.log("Bereits verarbeitete Dateien:", alreadyProcessedFiles.length);
@@ -3194,6 +3216,24 @@ nicht über verfügbare Methoden extrahiert werden konnte.`;
           console.log(
             `Generierter Dateiname für unbenannten Part: ${attachmentName}`,
           );
+        }
+
+        // In den Einstellungen ausgeschlossene Anhänge überspringen (Größe aus Base64 abgeleitet)
+        if (exclusionSettings) {
+          const exclusionReason = getAttachmentExclusionReason(
+            {
+              name: attachmentName,
+              contentType: part.contentType,
+              size: part.size || Math.floor((emailContentBase64.length * 3) / 4),
+            },
+            exclusionSettings,
+          );
+          if (exclusionReason) {
+            console.log(
+              `MIME-Part übersprungen: ${attachmentName} (${exclusionReason})`,
+            );
+            return;
+          }
         }
 
         // Eindeutigen Dateinamen erstellen
