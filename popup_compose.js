@@ -873,12 +873,29 @@ async function getPartiesInCase(caseId, username, password, serverAddress) {
 // Funktion zum Anzeigen der Beteiligten einer Akte
 const RECIPIENT_FIELDS = ["to", "cc", "bcc"];
 
+const EMAIL_ADDRESS_PATTERN = /[^\s<>"',;:]+@[^\s<>"',;]+/g;
+
 function getRecipientEmail(recipient) {
   if (typeof recipient !== "string") {
     return null;
   }
   const match = recipient.match(/<([^<>]+)>/);
   return (match ? match[1] : recipient).trim().toLowerCase();
+}
+
+// Alle Adressen eines Kontakts (email, emailHome, emailMisc), auch mehrere pro Feld
+// oder im Format "Name <adresse>"; die erste ist die Hauptadresse
+function collectContactEmails(contact) {
+  const emails = [];
+  for (const value of [contact.email, contact.emailHome, contact.emailMisc]) {
+    for (const match of (value || "").matchAll(EMAIL_ADDRESS_PATTERN)) {
+      const email = match[0].toLowerCase();
+      if (!emails.includes(email)) {
+        emails.push(email);
+      }
+    }
+  }
+  return emails;
 }
 
 async function getActiveComposeTabId() {
@@ -899,10 +916,10 @@ function getRecipientLists(composeDetails) {
   return lists;
 }
 
-// Feld (to/cc/bcc), in dem die Adresse aktuell steht, oder null
-function findRecipientField(recipientLists, email) {
+// Feld (to/cc/bcc), in dem eine der Adressen aktuell steht, oder null
+function findRecipientField(recipientLists, emails) {
   for (const field of RECIPIENT_FIELDS) {
-    if (recipientLists[field].some((r) => getRecipientEmail(r) === email)) {
+    if (recipientLists[field].some((r) => emails.includes(getRecipientEmail(r)))) {
       return field;
     }
   }
@@ -919,12 +936,11 @@ async function toggleRecipient(party, field) {
     }
     const composeDetails = await browser.compose.getComposeDetails(tabId);
     const recipientLists = getRecipientLists(composeDetails);
-    const email = party.email.trim().toLowerCase();
-    const currentField = findRecipientField(recipientLists, email);
+    const currentField = findRecipientField(recipientLists, party.emails);
 
     for (const listField of RECIPIENT_FIELDS) {
       recipientLists[listField] = recipientLists[listField].filter(
-        (r) => getRecipientEmail(r) !== email,
+        (r) => !party.emails.includes(getRecipientEmail(r)),
       );
     }
 
@@ -987,7 +1003,7 @@ async function resetRecipients() {
 
 // Hebt bei jedem Beteiligten den Button des Feldes hervor, in dem er gerade steht
 async function refreshRecipientHighlights() {
-  const partyItems = document.querySelectorAll(".partyItem[data-email]");
+  const partyItems = document.querySelectorAll(".partyItem[data-emails]");
   if (partyItems.length === 0) {
     return;
   }
@@ -999,7 +1015,10 @@ async function refreshRecipientHighlights() {
     await browser.compose.getComposeDetails(tabId),
   );
   partyItems.forEach((item) => {
-    const currentField = findRecipientField(recipientLists, item.dataset.email);
+    const currentField = findRecipientField(
+      recipientLists,
+      item.dataset.emails.split(" "),
+    );
     item.classList.toggle("isRecipient", currentField !== null);
     item.querySelectorAll("button[data-field]").forEach((button) => {
       button.classList.toggle("active", button.dataset.field === currentField);
@@ -1067,11 +1086,13 @@ async function displayParties(caseId) {
           );
 
           // Nur Beteiligte mit E-Mail-Adresse anzeigen
-          if (addressDetails.email) {
+          const emails = collectContactEmails(addressDetails);
+          if (emails.length > 0) {
             partiesWithEmails.push({
               name: addressDetails.name,
               firstName: addressDetails.firstName,
-              email: addressDetails.email,
+              email: emails[0],
+              emails: emails,
               involvementType: party.involvementType,
               reference: party.reference, // Referenz aus der Partei-Information hinzufügen
             });
@@ -1104,7 +1125,7 @@ async function displayParties(caseId) {
     partiesWithEmails.forEach((party) => {
       const div = document.createElement("div");
       div.className = "partyItem";
-      div.dataset.email = party.email.trim().toLowerCase();
+      div.dataset.emails = party.emails.join(" ");
 
       // Namen formatieren
       let displayName = party.name;
