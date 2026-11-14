@@ -237,6 +237,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         "password",
         "serverAddress",
         "allowRename",
+        "closeComposePopupAfterSaveClick",
       ]);
       let customFilename = null;
       let composeTabId = null;
@@ -265,7 +266,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         }
       }
 
-      browser.runtime.sendMessage({
+      await browser.runtime.sendMessage({
         type: "saveToCaseAfterSend",
         source: "popup_compose",
         caseId: currentSelectedCase.id,
@@ -279,6 +280,12 @@ document.addEventListener("DOMContentLoaded", async function () {
         customFilename: customFilename,
         composeTabId: composeTabId,
       });
+
+      // Optional (Einstellungen): Fenster schließen, die Speicherung nach dem Senden liegt im Hintergrund-Skript
+      if (settings.closeComposePopupAfterSaveClick) {
+        window.close();
+        return;
+      }
 
       feedback.textContent = i18nMessage("saveAfterSendFeedback");
       feedback.style.color = "green";
@@ -586,6 +593,7 @@ async function searchCases(query) {
     // Event-Handler für Suchergebnisse
     document.querySelectorAll(".resultItem").forEach((item) => {
       item.addEventListener("click", async function () {
+        caseChosenManually = true;
         // Setze die ausgewählte Akte basierend auf dem Klick
         const caseId = this.getAttribute("data-id");
         const caseName = this.getAttribute("data-name");
@@ -1011,6 +1019,9 @@ setInterval(() => {
   );
   refreshComposeHeader().catch((error) =>
     console.error("Fehler beim Aktualisieren des Kopfbalkens:", error),
+  );
+  rerunDetectionIfChanged().catch((error) =>
+    console.error("Fehler bei der erneuten Aktenerkennung:", error),
   );
 }, 2000);
 document.addEventListener("DOMContentLoaded", () => {
@@ -1642,7 +1653,11 @@ async function displaySuggestions(matches, loginData, tabId) {
     match.metadata = metadata;
 
     // Click-Handler
-    div.addEventListener("click", async function () {
+    div.addEventListener("click", async function (event) {
+      // Echte Klicks (nicht die automatische Auswahl) schützen die Wahl vor erneuter Erkennung
+      if (event.isTrusted) {
+        caseChosenManually = true;
+      }
       // Entferne vorherige Selektion
       document
         .querySelectorAll(".suggestionItem")
@@ -1666,6 +1681,46 @@ async function displaySuggestions(matches, loginData, tabId) {
   }
 }
 
+// Erneute Erkennung, wenn sich Empfänger (An/CC) oder Betreff nach dem Öffnen ändern
+let lastDetectionSignature = null;
+let pendingDetectionSignature = null;
+let caseChosenManually = false;
+
+function getDetectionSignature(composeDetails) {
+  const recipientLists = getRecipientLists(composeDetails);
+  const emails = [...recipientLists.to, ...recipientLists.cc]
+    .map(getRecipientEmail)
+    .filter((email) => email)
+    .sort();
+  return JSON.stringify([(composeDetails.subject || "").trim(), emails]);
+}
+
+async function rerunDetectionIfChanged() {
+  // Eine von Hand gewählte Akte wird nicht überschrieben
+  if (caseChosenManually || lastDetectionSignature === null) {
+    return;
+  }
+  const tabId = await getActiveComposeTabId();
+  if (tabId === null) {
+    return;
+  }
+  const signature = getDetectionSignature(
+    await browser.compose.getComposeDetails(tabId),
+  );
+  if (signature === lastDetectionSignature) {
+    pendingDetectionSignature = null;
+    return;
+  }
+  // Erst neu suchen, wenn die Eingabe einen Abgleich lang unverändert ist (nicht bei jedem Tastendruck)
+  if (signature !== pendingDetectionSignature) {
+    pendingDetectionSignature = signature;
+    return;
+  }
+  pendingDetectionSignature = null;
+  console.log("Empfänger oder Betreff geändert, starte Aktenerkennung erneut");
+  await findFileNumberInComposeMessage();
+}
+
 // Funktion zum Auslesen des Betreffs im Compose-Fenster und Suche nach einem Aktenzeichen
 async function findFileNumberInComposeMessage() {
   try {
@@ -1682,6 +1737,7 @@ async function findFileNumberInComposeMessage() {
     // Compose-Details aus dem aktiven Tab abrufen
     const composeDetails = await browser.compose.getComposeDetails(tabId);
     console.log("Compose-Details:", composeDetails);
+    lastDetectionSignature = getDetectionSignature(composeDetails);
 
     // Betreff kann bei neuen Nachrichten noch leer sein, dann zählen Text und Empfänger
     const subject = (composeDetails.subject || "").trim();

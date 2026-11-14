@@ -85,6 +85,9 @@
   "availablePlaceholders": {
     "message": "Verfügbare Platzhalter:"
   },
+  "closeComposePopupAfterSaveClickLabel": {
+    "message": "Fenster beim Verfassen nach Klick auf „Nach Senden speichern“ schließen"
+  },
   "performOcrLabel": {
     "message": "OCR für neue Dokumente anstoßen, Bilder und PDFs"
   },

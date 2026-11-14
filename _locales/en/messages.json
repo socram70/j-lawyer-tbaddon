@@ -85,6 +85,9 @@
   "availablePlaceholders": {
     "message": "Available placeholders:"
   },
+  "closeComposePopupAfterSaveClickLabel": {
+    "message": "Close the compose window of the add-on after clicking \"Save after sending\""
+  },
   "performOcrLabel": {
     "message": "Run OCR for new documents, images and PDFs"
   },

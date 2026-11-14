@@ -28,6 +28,9 @@ document.getElementById("saveButton").addEventListener("click", async function (
   const moveToTrash = document.getElementById("moveToTrash").checked;
   const allowRename = document.getElementById("allowRename").checked;
   const performOcr = document.getElementById("performOcr").checked;
+  const closeComposePopupAfterSaveClick = document.getElementById(
+    "closeComposePopupAfterSaveClick",
+  ).checked;
   const subjectTemplate = document.getElementById("subjectTemplate").value;
   const filenameTemplate = document.getElementById("filenameTemplate").value;
   const excludeSmallImages =
@@ -57,6 +60,7 @@ document.getElementById("saveButton").addEventListener("click", async function (
       moveToTrash: moveToTrash,
       allowRename: allowRename,
       performOcr: performOcr,
+      closeComposePopupAfterSaveClick: closeComposePopupAfterSaveClick,
       subjectTemplate: subjectTemplate,
       filenameTemplate: filenameTemplate,
       excludeSmallImages: excludeSmallImages,
@@ -161,6 +165,7 @@ document.addEventListener("DOMContentLoaded", function () {
       "moveToTrash",
       "allowRename",
       "performOcr",
+      "closeComposePopupAfterSaveClick",
       "subjectTemplate",
       "filenameTemplate",
       "excludeSmallImages",
@@ -178,6 +183,8 @@ document.addEventListener("DOMContentLoaded", function () {
         result.allowRename || false;
       document.getElementById("performOcr").checked =
         result.performOcr || false;
+      document.getElementById("closeComposePopupAfterSaveClick").checked =
+        result.closeComposePopupAfterSaveClick || false;
       document.getElementById("subjectTemplate").value =
         result.subjectTemplate || "";
       document.getElementById("filenameTemplate").value =
