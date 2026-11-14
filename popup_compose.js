@@ -2152,16 +2152,10 @@ async function findFileNumberInComposeMessage() {
       "serverAddress",
     ]);
 
-    // Die gespeicherten Cases in einem Array
-    let casesArray = storedData.cases;
+    // Die gespeicherten Cases in einem Array (werden nicht mehr synchronisiert, meist leer)
+    let casesArray = storedData.cases || [];
 
-    // Wenn keine Cases vorhanden sind, beenden
-    if (!casesArray || casesArray.length === 0) {
-      console.log("Keine Cases im Storage gefunden.");
-      return null;
-    }
-
-    // Verwende neue Matching-Funktion für Top 3 Vorschläge
+    // Lokale Treffer nur als Ergänzung, die Suche erfolgt in jedem Fall am Server
     const localMatches = findBestMatchesInSubject(
       subject,
       casesArray,
