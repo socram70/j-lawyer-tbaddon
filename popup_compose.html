@@ -275,6 +275,38 @@
             .partyItem:hover {
                 background-color: #e0e0e0;
             }
+
+            .partyItem {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 8px;
+            }
+
+            .partyRecipientButtons {
+                display: flex;
+                gap: 4px;
+                flex-shrink: 0;
+            }
+
+            .partyRecipientButtons button {
+                margin: 0;
+                padding: 2px 8px;
+                font-size: 11px;
+            }
+
+            .partyRecipientButtons button.active {
+                background-color: #2196f3;
+                color: white;
+            }
+
+            .partyItem.isRecipient {
+                background-color: #e3f2fd;
+            }
+
+            .resetRecipientsButton {
+                margin: 0 0 8px 0;
+            }
         </style>
 
         <!-- Code für den "Daten aktualisieren" und "Einstellungen"-Button -->

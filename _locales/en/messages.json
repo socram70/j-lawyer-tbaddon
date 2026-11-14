@@ -109,6 +109,37 @@
   "archivedCaseBadge": {
     "message": "[archived]"
   },
+  "recipientField_to": {
+    "message": "To"
+  },
+  "recipientField_cc": {
+    "message": "CC"
+  },
+  "recipientField_bcc": {
+    "message": "BCC"
+  },
+  "resetRecipientsButton": {
+    "message": "Reset recipients"
+  },
+  "recipientAddedFeedback": {
+    "message": "Added: $ITEM$",
+    "placeholders": {
+      "item": {
+        "content": "$1"
+      }
+    }
+  },
+  "recipientRemovedFeedback": {
+    "message": "Removed: $ITEM$",
+    "placeholders": {
+      "item": {
+        "content": "$1"
+      }
+    }
+  },
+  "recipientsResetFeedback": {
+    "message": "All recipients have been removed."
+  },
   "subjectTemplateLabel": {
     "message": "Subject template for new emails, empty means default:"
   },

@@ -109,6 +109,37 @@
   "archivedCaseBadge": {
     "message": "[abgelegt]"
   },
+  "recipientField_to": {
+    "message": "An"
+  },
+  "recipientField_cc": {
+    "message": "CC"
+  },
+  "recipientField_bcc": {
+    "message": "BCC"
+  },
+  "resetRecipientsButton": {
+    "message": "Empfänger zurücksetzen"
+  },
+  "recipientAddedFeedback": {
+    "message": "Hinzugefügt: $ITEM$",
+    "placeholders": {
+      "item": {
+        "content": "$1"
+      }
+    }
+  },
+  "recipientRemovedFeedback": {
+    "message": "Entfernt: $ITEM$",
+    "placeholders": {
+      "item": {
+        "content": "$1"
+      }
+    }
+  },
+  "recipientsResetFeedback": {
+    "message": "Alle Empfänger wurden entfernt."
+  },
   "subjectTemplateLabel": {
     "message": "Betreff-Vorlage für neue E-Mails, leer bedeutet Standard:"
   },
