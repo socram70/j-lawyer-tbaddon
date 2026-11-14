@@ -688,42 +688,102 @@ browser.runtime.onMessage.addListener((message) => {
     message.source === "popup_menu_bundle_save"
   ) {
     selectedCaseFolderID_bundle = message.selectedCaseFolderID;
-
-    for (const key in messagesToSaveObjects.messages) {
-      browser.storage.local
-        .get(["username", "password", "serverAddress"])
-        .then(async (result) => {
-          console.log(
-            "Single Selected Message Key:",
-            key,
-            "Value:",
-            messagesToSaveObjects.messages[key].id,
-          );
-
-          const caseId = getCaseIdFromMessage(message);
-
-          if (caseId) {
-            singleMessageFromSelection = messagesToSaveObjects.messages[key];
-            sendEmailToServerFromSelection(
-              singleMessageFromSelection,
-              caseId,
-              result.username,
-              result.password,
-              result.serverAddress,
-              Array.isArray(message.selectedTags) ? message.selectedTags : [],
-            );
-          } else {
-            console.log("Keine Akten-ID übergeben");
-            browser.runtime.sendMessage({
-              type: "error",
-              content: "Keine Akten-ID übergeben",
-            });
-          }
-        });
-    }
-    documentCounter = 0;
+    saveSelectedMessagesToCase(message).catch(async (error) => {
+      console.error("Fehler beim Speichern der ausgewählten Nachrichten:", error);
+      await browser.runtime.sendMessage({
+        type: "error",
+        content: error.message,
+      });
+    });
   }
 });
+
+// Speichert alle ausgewählten Nachrichten nacheinander im gewählten Modus:
+// full = Nachricht inkl. Anhängen als .eml, messageOnly = .eml ohne Anhänge,
+// attachmentsOnly = nur Anhänge, both = .eml ohne Anhänge + Anhänge einzeln
+async function saveSelectedMessagesToCase(message) {
+  const caseId = getCaseIdFromMessage(message);
+  if (!caseId) {
+    console.log("Keine Akten-ID übergeben");
+    await browser.runtime.sendMessage({
+      type: "error",
+      content: "Keine Akten-ID übergeben",
+    });
+    return;
+  }
+
+  const { username, password, serverAddress } = await browser.storage.local.get(
+    ["username", "password", "serverAddress"],
+  );
+  const selectedTags = Array.isArray(message.selectedTags)
+    ? message.selectedTags
+    : [];
+  const saveMode = message.saveMode || "full";
+
+  // sendOnlyMessageToServer/sendAttachmentsToServer (background.js) lesen Ordner und Etiketten aus diesen Quellen
+  selectedCaseFolderID = message.selectedCaseFolderID;
+
+  documentCounter = 0;
+  for (const selectedMessage of messagesToSaveObjects.messages) {
+    console.log("Speichere ausgewählte Nachricht:", selectedMessage.id, saveMode);
+
+    if (saveMode === "full") {
+      await sendEmailToServerFromSelection(
+        selectedMessage,
+        caseId,
+        username,
+        password,
+        serverAddress,
+        selectedTags,
+      );
+      continue;
+    }
+
+    if (saveMode === "messageOnly" || saveMode === "both") {
+      await browser.storage.local.set({ selectedTags });
+      await sendOnlyMessageToServer(
+        caseId,
+        username,
+        password,
+        serverAddress,
+        null,
+        selectedMessage.id,
+        { clearSelectedTags: false },
+      );
+    }
+
+    if (saveMode === "attachmentsOnly" || saveMode === "both") {
+      const attachments = await browser.messages.listAttachments(
+        selectedMessage.id,
+      );
+      if (attachments.length === 0) {
+        // Bei "both" wurde die Nachricht bereits gespeichert, bei "attachmentsOnly" gibt es nichts zu tun
+        await logActivity(
+          "saveSelectedMessagesToCase",
+          "Keine Anhänge in Nachricht: " + selectedMessage.subject,
+        );
+        if (saveMode === "attachmentsOnly") {
+          await browser.runtime.sendMessage({
+            type: "error",
+            content: i18nMessage("noAttachmentsFeedback"),
+          });
+        }
+        continue;
+      }
+
+      await browser.storage.local.set({ selectedTags });
+      await sendAttachmentsToServer(
+        caseId,
+        username,
+        password,
+        serverAddress,
+        selectedMessage.id,
+      );
+    }
+  }
+  documentCounter = 0;
+  await browser.storage.local.remove("selectedTags");
+}
 
 async function logActivity(action, details) {
   const timestamp = new Date().toISOString();
