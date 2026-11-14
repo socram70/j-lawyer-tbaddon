@@ -68,10 +68,16 @@ This project has no build system or package manager. All JavaScript is vanilla a
    - Reordering, renaming, and PDF merging of images
    - Storage-based communication with background scripts
 
+8. **Shared helpers** (loaded by the pages that need them, see `<script>` tags and `manifest.json`)
+   - `case-suggestions.js` - `collectCaseSuggestions()`: shared case detection for inbox and compose popup (file number patterns in subject/text, full subject search, case parties by email address; all requests in parallel; a file number in the subject takes precedence over address-based suggestions)
+   - `sender-case-lookup.js` - `findCasesByContactEmail()`: exact email match via `/v8/contacts/page?q=` (incl. emailHome/emailMisc), then `/v5/contacts/{id}/cases`
+   - `case-archive.js` - archived case detection (`/v1/cases/list/active`), "(archived)" badge, reactivation via `/v2/cases/{id}` + `PUT /v2/cases/update`
+   - `attachment-filter.js` - excludes small images / file extensions when saving attachments separately (background and popup)
+
 ### UI Components
 
 - **popup.html** - Main popup when viewing a message
-- **popup_compose.html** - Popup in compose window
+- **popup_compose.html** - Compose window popup; opened by `composeAction.onClicked` in `background.js` as its own window (one per compose tab, compose tab ID passed as `?composeTabId=`, positioned at the right of the compose window, size stored as `composePopupWindowSize`)
 - **popup_menu_bundle_save.html** - Bulk save dialog for multiple messages
 - **cal.html** - Calendar entry creation dialog
 - **options.html** - Extension settings page
@@ -107,7 +113,7 @@ Credentials are stored **unencrypted** in `browser.storage.local`.
 ## Data Storage
 
 Uses `browser.storage.local` for caching:
-- `cases` - All case data (synchronized daily)
+- `cases` - Legacy case cache, no longer synchronized (cases are searched live via the API)
 - `casesList` - Raw case list from server
 - `documentTags` - Available document tags
 - `emailTemplates` - Email template metadata
@@ -118,6 +124,9 @@ Uses `browser.storage.local` for caching:
 - `imageEditEnabled` - Boolean for image editing toggle
 - `moveToTrash` - Boolean to move messages to trash after saving
 - `activityLog` - Array of activity log entries
+- `excludeSmallImages`, `excludeSmallImagesMaxKb`, `excludedExtensions` - Attachment exclusion settings
+- `closeComposePopupAfterSaveClick` - Close the compose popup after "Save after sending"
+- `popupWindowSize`, `composePopupWindowSize`, `bundleSaveWindowSize` - Remembered window sizes
 
 ## Key Workflows
 
@@ -140,8 +149,9 @@ Uses `browser.storage.local` for caching:
 - All files uploaded to selected case/folder
 
 ### 3. Compose Window Integration
-- User composes email → popup_compose.js loads
-- Subject line analyzed for file numbers (auto-selects case)
+- User composes email → clicks compose action → popup_compose.html opens as own window
+- Case detection via `collectCaseSuggestions()` (subject, quoted body, To/CC addresses); re-runs every 2 s when To/CC or subject changed and stayed stable, unless the user picked a case manually
+- Parties list: To/CC/BCC toggle buttons, highlight of the current field (matched against all contact addresses), "reset recipients"
 - Context menu provides:
   - Insert email template (with placeholder substitution)
   - Attach document from case (hierarchical folder menu)
@@ -150,6 +160,7 @@ Uses `browser.storage.local` for caching:
 ### 4. Bulk Message Processing
 - Select multiple messages in list
 - Right-click → "Nachrichten an j-Lawyer senden..."
+- Save mode per button (`saveMode`: full, messageOnly, attachmentsOnly, both), handled sequentially in `saveSelectedMessagesToCase()` (background_menu.js)
 - Select case, folder, tags once
 - All selected messages processed sequentially
 

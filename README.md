@@ -10,9 +10,12 @@ Wichtig: Zugangsdaten werden lokal und unverschlüsselt in Thunderbird gespeiche
 - Bildanhänge bearbeiten: Bilder zuschneiden, Reihenfolge festlegen, umbenennen, als ein PDF zusammenfassen und speichern
 - Etiketten setzen: beliebige Dokument-Tags beim Hochladen vergeben; gespeicherte Nachrichten werden zusätzlich mit dem Tag „veraktet“ versehen
 - Ordnerwahl: Zielordner innerhalb der Akte auswählen (Ordnerbaum wird angezeigt)
-- Kontextmenü für Mehrfachzuordnung: mehrere markierte Nachrichten per Rechtsklick an eine Akte senden
+- Kontextmenü für Mehrfachzuordnung: mehrere markierte Nachrichten per Rechtsklick an eine Akte senden, wahlweise komplett, nur Nachricht, nur Anhänge oder Nachricht und Anhänge getrennt
+- Automatische Aktenvorschläge: Aktenzeichen in Betreff und Text sowie Abgleich der Absender- bzw. Empfänger-Adressen mit den Beteiligten der Akten; ein Aktenzeichen im Betreff hat Vorrang
+- Archivierte Akten: werden bei der Suche gefunden, als „(archiviert)“ gekennzeichnet und können direkt reaktiviert werden
+- Anhänge filtern: kleine Bilder (z. B. Signatur-Logos) und bestimmte Dateiendungen beim separaten Speichern überspringen
 - Kalender: Termin, Frist oder Wiedervorlage für eine Akte und einen Nutzer anlegen (j-lawyer.org ≥ 2.6)
-- Verfassen-Fenster: Akte wählen, Vorlagen mit Platzhaltern einfügen, Dokumente aus der Akte als Anhang hinzufügen; Aktenzeichen-Erkennung im Betreff
+- Verfassen-Fenster: eigenes Fenster neben der E-Mail; Akte wählen, Beteiligte per Klick in An/CC/BCC übernehmen, Vorlagen mit Platzhaltern einfügen, Dokumente aus der Akte als Anhang hinzufügen, nach dem Senden speichern
 - Datenabgleich: Nutzer, Kalender, Akten, Ordner und Tags laden/aktualisieren (↺)
 - Optional: E-Mail nach Zuordnung in Papierkorb verschieben/sofort löschen (abhängig von Kontoeinstellung)
 - Protokoll: Log einsehen und löschen
@@ -33,6 +36,8 @@ Wichtig: Zugangsdaten werden lokal und unverschlüsselt in Thunderbird gespeiche
    - Serveradresse inkl. Protokoll und Port, z. B. `http://192.168.1.10:8080`
    - Benutzername und Passwort
    - Optional: „E-Mail nach Zuordnung in Papierkorb verschieben“ aktivieren
+   - Optional: kleine Bilder und Dateiendungen vom separaten Speichern von Anhängen ausschließen
+   - Optional: Fenster beim Verfassen nach Klick auf „Nach Senden speichern“ schließen
 
 4) Erster Datenabgleich wird bei bestehender Verbindung automatisch und dann jeden Tag vorgenommen. 
    Kann manuell ausgelöst werden. Sollte manuell ausgelöst werden bei neu angelegten Akten.
@@ -66,7 +71,8 @@ Wichtig: Zugangsdaten werden lokal und unverschlüsselt in Thunderbird gespeiche
 4) Mehrere Nachrichten per Kontextmenü zuordnen
 - In der Nachrichtenliste mehrere E-Mails markieren
 - Rechtsklick → „Nachrichten an j-Lawyer senden…“
-- Akte/Ordner wählen, optional Tags setzen → speichern
+- Akte/Ordner wählen, optional Tags setzen
+- „Speichern“, „Nur Nachricht“, „Nur Anhang“ oder „Nachricht und Anhang“ klicken; die Nachrichten werden nacheinander gespeichert
 
 5) Kalendereintrag erstellen (Termin/Frist/Wiedervorlage)
 - Toolbar-Symbol „Kalendereintrag erstellen“ öffnen
@@ -79,15 +85,17 @@ Wichtig: Zugangsdaten werden lokal und unverschlüsselt in Thunderbird gespeiche
    ![Kalender 2](https://github.com/jlawyerorg/j-lawyer-tbaddon/assets/71747937/4531ba6d-f8ee-4ce5-8843-c748c2d5df87)
 
 6) Arbeit im Verfassen-Fenster
-- Beim Schreiben einer E-Mail das Erweiterungsmenü nutzen
-- Akte wählen; Ordner und „Dokumente“ aus der Akte als Anhang hinzufügen
-- E-Mail-Vorlagen mit Platzhaltern abrufen und einsetzen
-- Betreff wird automatisch auf Aktenzeichen geprüft und für die Aktenauswahl verwendet
+- Beim Schreiben einer E-Mail den Button der Erweiterung anklicken → eigenes Fenster rechts am Verfassen-Fenster (Größe wird gemerkt)
+- Die Akte wird wie im Posteingang vorgeschlagen: Aktenzeichen in Betreff und zitiertem Text, Beteiligte unter den Empfängern; ändern sich Empfänger oder Betreff, wird erneut gesucht (eine von Hand gewählte Akte bleibt erhalten)
+- Beteiligte der Akte per „An“, „CC“ oder „BCC“ übernehmen; erneuter Klick entfernt sie wieder, das aktuelle Feld ist hervorgehoben; „Empfänger zurücksetzen“ leert alle Empfängerfelder
+- „Nach Senden speichern“: die E-Mail wird nach dem Versand in der Akte abgelegt
+- Rechtsklick auf den Button: E-Mail-Vorlagen mit Platzhaltern einfügen, Dokumente aus der Akte als Anhang hinzufügen
 
 ## Hinweise und Sicherheit
 
 - Anmeldedaten werden lokal unverschlüsselt gespeichert
 - Bei neuen/„jungen“ Akten vor Kalender-/Speicherfunktionen einmal ↺ ausführen, damit die Akte gefunden wird
+- Vorschläge über E-Mail-Adressen funktionieren nur, wenn die Adresse beim Kontakt in j-lawyer hinterlegt ist (E-Mail, privat oder sonstige); weitere Adressen eines Kontakts am besten unter „E-Mail sonstige“ eintragen
 - Bei Fehler „Datei existiert eventuell schon“ ggf. Dateiname ändern oder Zielordner prüfen
 
 ## Mitwirken

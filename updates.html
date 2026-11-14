@@ -42,6 +42,41 @@
             <h1 data-i18n="updatesTitle">Latest changes</h1>
             <ul>
                 <li>
+                    <strong>Version 1.10.0</strong>
+                    <ul>
+                        <li>
+                            The compose popup now opens as its own resizable window next to the compose window, in the same layout as the inbox popup: parties, folders and tags side by side.
+                        </li>
+                        <li>
+                            Compose window: parties can be added to To, CC or BCC with one click; clicking again removes them, the current field is highlighted. New button "Reset recipients".
+                        </li>
+                        <li>
+                            Compose window: case detection now works like in the inbox popup (file number in subject and quoted text, search with the subject, case parties among the recipients) and runs again when recipients or subject change.
+                        </li>
+                        <li>
+                            Case suggestions: the sender's email address is matched against case parties. A file number in the subject takes precedence over address-based suggestions.
+                        </li>
+                        <li>
+                            Archived cases are found in searches, marked as "(archived)" and can be reactivated directly.
+                        </li>
+                        <li>
+                            Context menu dialog for multiple messages: choose between Save, Message only, Attachments only and Message and attachments.
+                        </li>
+                        <li>
+                            New options: skip small images (e.g. signature logos) and selected file extensions when saving attachments separately; close the add-on window after "Save after sending".
+                        </li>
+                        <li>
+                            Fixed: error "tags.0: Expected string instead of undefined" when the tag "veraktet" did not exist yet.
+                        </li>
+                        <li>
+                            Fixed: inline attachments could be taken from the currently displayed message instead of the selected one.
+                        </li>
+                        <li>
+                            Fixed: case detection in the compose window stopped when no cases were cached locally.
+                        </li>
+                    </ul>
+                </li>
+                <li>
                     <strong>Version 1.9.7</strong>
                     <ul>
                         <li>
@@ -139,6 +174,41 @@
         <div class="locale-de">
         <h1>Letzte Änderungen</h1>
         <ul>
+            <li>
+                <strong>Version 1.10.0</strong>
+                <ul>
+                    <li>
+                        Das Popup beim Verfassen öffnet sich jetzt als eigenes, skalierbares Fenster rechts am Verfassen-Fenster, im Layout des Posteingangs-Popups: Beteiligte, Ordner und Etiketten nebeneinander.
+                    </li>
+                    <li>
+                        Verfassen-Fenster: Beteiligte per Klick in An, CC oder BCC übernehmen; ein erneuter Klick entfernt sie, das aktuelle Feld ist hervorgehoben. Neuer Button „Empfänger zurücksetzen“.
+                    </li>
+                    <li>
+                        Verfassen-Fenster: Die Aktenerkennung arbeitet jetzt wie im Posteingangs-Popup (Aktenzeichen in Betreff und zitiertem Text, Suche mit dem Betreff, Beteiligte unter den Empfängern) und läuft erneut, wenn sich Empfänger oder Betreff ändern.
+                    </li>
+                    <li>
+                        Aktenvorschläge: Die Absender-Adresse wird mit den Beteiligten der Akten abgeglichen. Ein Aktenzeichen im Betreff hat Vorrang vor Vorschlägen über Adressen.
+                    </li>
+                    <li>
+                        Archivierte Akten werden bei der Suche gefunden, als „(archiviert)“ gekennzeichnet und lassen sich direkt reaktivieren.
+                    </li>
+                    <li>
+                        Kontextmenü-Dialog für mehrere Nachrichten: Auswahl zwischen Speichern, Nur Nachricht, Nur Anhang sowie Nachricht und Anhang.
+                    </li>
+                    <li>
+                        Neue Optionen: kleine Bilder (z. B. Signatur-Logos) und bestimmte Dateiendungen beim separaten Speichern von Anhängen überspringen; Fenster nach „Nach Senden speichern“ schließen.
+                    </li>
+                    <li>
+                        Fehlerbehebung: Fehler „tags.0: Expected string instead of undefined“, wenn das Etikett „veraktet“ noch nicht existierte.
+                    </li>
+                    <li>
+                        Fehlerbehebung: Inline-Anhänge konnten aus der gerade angezeigten statt aus der ausgewählten Nachricht stammen.
+                    </li>
+                    <li>
+                        Fehlerbehebung: Die Aktenerkennung im Verfassen-Fenster brach ab, wenn keine Akten lokal zwischengespeichert waren.
+                    </li>
+                </ul>
+            </li>
             <li>
                 <strong>Version 1.9.7</strong>
                 <ul>
