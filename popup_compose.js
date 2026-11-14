@@ -19,6 +19,39 @@ let caseFolders = {}; // Speichert die Ordner des aktuell ausgewählten Cases
 let selectedCaseFolderID = null; // Speichert den aktuell ausgewählten Ordner des aktuell ausgewählten Cases
 let emailTemplatesNames = {}; // Speichert die Email-Templates
 
+// Das Popup läuft als eigenes Fenster, der zugehörige Compose-Tab kommt per URL-Parameter
+const composeTabIdFromUrl =
+  Number(new URLSearchParams(window.location.search).get("composeTabId")) ||
+  null;
+
+async function queryComposeTabs() {
+  if (composeTabIdFromUrl !== null) {
+    return [{ id: composeTabIdFromUrl }];
+  }
+  return browser.tabs.query({ active: true, currentWindow: true });
+}
+
+// Fenstergröße speichern bei Änderung
+function saveWindowSize() {
+  const width = window.outerWidth;
+  const height = window.outerHeight;
+  if (width > 0 && height > 0) {
+    browser.storage.local.set({
+      composePopupWindowSize: { width, height },
+    });
+  }
+}
+
+// Debounced resize handler
+let resizeTimeout;
+window.addEventListener("resize", function () {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(saveWindowSize, 500);
+});
+
+// Speichere auch beim Schließen
+window.addEventListener("beforeunload", saveWindowSize);
+
 // Standard-Betreff-Template
 const DEFAULT_SUBJECT_TEMPLATE =
   "Unser Zeichen: {{AKTE_KURZRUBRUM}}, {{AKTE_ZEICHEN}}";
@@ -37,10 +70,7 @@ async function updateSaveAfterSendStateForComposeTab() {
     return;
   }
 
-  const tabs = await browser.tabs.query({
-    active: true,
-    currentWindow: true,
-  });
+  const tabs = await queryComposeTabs();
   const composeTabId = tabs.length > 0 ? tabs[0].id : null;
 
   const loginData = await browser.storage.local.get([
@@ -115,10 +145,7 @@ document.addEventListener("DOMContentLoaded", async function () {
 
   // Prüfe ob bereits ein Betreff vorhanden ist und zeige Button
   try {
-    const tabs = await browser.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
+    const tabs = await queryComposeTabs();
     if (tabs.length > 0) {
       const composeDetails = await browser.compose.getComposeDetails(
         tabs[0].id,
@@ -141,10 +168,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
 
       try {
-        const tabs = await browser.tabs.query({
-          active: true,
-          currentWindow: true,
-        });
+        const tabs = await queryComposeTabs();
         if (tabs.length > 0) {
           const tabId = tabs[0].id;
 
@@ -217,10 +241,7 @@ document.addEventListener("DOMContentLoaded", async function () {
       let customFilename = null;
       let composeTabId = null;
 
-      const tabs = await browser.tabs.query({
-        active: true,
-        currentWindow: true,
-      });
+      const tabs = await queryComposeTabs();
       if (tabs.length > 0) {
         composeTabId = tabs[0].id;
       }
@@ -841,7 +862,7 @@ function getRecipientEmail(recipient) {
 }
 
 async function getActiveComposeTabId() {
-  const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+  const tabs = await queryComposeTabs();
   if (tabs.length === 0) {
     console.log("Kein aktiver Tab gefunden.");
     return null;
@@ -2069,10 +2090,7 @@ async function displaySuggestions(matches, loginData, tabId) {
 async function findFileNumberInComposeMessage() {
   try {
     // Aktiven Tab im Compose-Fenster ermitteln
-    const tabs = await browser.tabs.query({
-      active: true,
-      currentWindow: true,
-    });
+    const tabs = await queryComposeTabs();
     if (tabs.length === 0) {
       console.log("Kein aktiver Tab gefunden.");
       return null;
