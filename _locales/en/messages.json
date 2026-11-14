@@ -97,6 +97,18 @@
   "allAttachmentsExcludedMessageSavedFeedback": {
     "message": "The message was saved, all attachments are excluded by your settings."
   },
+  "archivedCaseWarning": {
+    "message": "This case is archived."
+  },
+  "reactivateCaseButton": {
+    "message": "Reactivate case"
+  },
+  "caseReactivatedFeedback": {
+    "message": "Case has been reactivated."
+  },
+  "archivedCaseBadge": {
+    "message": "[archived]"
+  },
   "subjectTemplateLabel": {
     "message": "Subject template for new emails, empty means default:"
   },

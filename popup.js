@@ -82,6 +82,7 @@ async function resetAndSearchForNewMessage() {
 
   // UI zurücksetzen
   currentSelectedCase = null;
+  updateArchivedCaseNotice(null, false);
   caseMetaData = {};
   caseFolders = {};
   selectedCaseFolderID = null;
@@ -1301,6 +1302,7 @@ async function selectSuggestion(match, loginData) {
   if (customizableLabel) {
     customizableLabel.textContent = `${item.fileNumber}: ${item.name} (${caseMetaData.reason} - ${caseMetaData.lawyer})`;
   }
+  updateArchivedCaseNotice(item.id, caseMetaData.archived, loginData);
 
   return {
     id: item.id,
@@ -1378,6 +1380,9 @@ async function displaySuggestions(matches, loginData) {
     caseDetails.className = "caseDetails";
     caseDetails.textContent = `${metadata.reason || "?"} - ${metadata.lawyer || "?"}`;
     caseInfo.appendChild(caseDetails);
+    if (isArchivedValue(metadata.archived)) {
+      caseName.appendChild(createArchivedBadge());
+    }
 
     const confidenceBadge = document.createElement("span");
     confidenceBadge.className = `confidenceBadge ${confidenceClass}`;
@@ -1633,7 +1638,7 @@ async function searchCasesApi(
   password,
   serverAddress,
   searchString,
-  includeArchived = false,
+  includeArchived = true,
 ) {
   // API erfordert mindestens 3 Zeichen
   if (!searchString || searchString.length < 3) {
@@ -1747,7 +1752,7 @@ async function getCaseMetaData(caseId, username, password, serverAddress) {
       if ("lawyer" in data && data.lawyer !== null) {
         extractedData.lawyer = data.lawyer;
       }
-      extractedData;
+      extractedData.archived = isArchivedValue(data.archived);
 
       return extractedData;
     });
@@ -1820,7 +1825,11 @@ async function searchCases(query) {
       return;
     }
 
-    results.forEach((item) => {
+    const archivedStates = await Promise.all(
+      results.map((item) => isCaseArchivedInSearch(item.id, loginData)),
+    );
+
+    results.forEach((item, index) => {
       const div = document.createElement("div");
       div.className = "resultItem";
       div.setAttribute("data-id", item.id);
@@ -1832,6 +1841,9 @@ async function searchCases(query) {
       div.textContent = `${item.name} (${item.fileNumber})`;
       if (item.reason) {
         div.textContent += ` - ${item.reason}`;
+      }
+      if (archivedStates[index]) {
+        div.appendChild(createArchivedBadge());
       }
       resultsListElement.appendChild(div);
     });
@@ -1866,6 +1878,11 @@ async function searchCases(query) {
 
         // Label aktualisieren
         customizableLabel.textContent = `${currentSelectedCase.fileNumber}: ${currentSelectedCase.name} (${caseMetaData.reason} - ${caseMetaData.lawyer})`;
+        updateArchivedCaseNotice(
+          currentSelectedCase.id,
+          caseMetaData.archived,
+          loginData,
+        );
       });
     });
   } catch (error) {

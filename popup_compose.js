@@ -382,7 +382,7 @@ async function searchCasesApi(
   password,
   serverAddress,
   searchString,
-  includeArchived = false,
+  includeArchived = true,
 ) {
   // API erfordert mindestens 3 Zeichen
   if (!searchString || searchString.length < 3) {
@@ -539,7 +539,11 @@ async function searchCases(query) {
       return;
     }
 
-    results.forEach((item) => {
+    const archivedStates = await Promise.all(
+      results.map((item) => isCaseArchivedInSearch(item.id, loginData)),
+    );
+
+    results.forEach((item, index) => {
       const div = document.createElement("div");
       div.className = "resultItem";
       div.setAttribute("data-id", item.id);
@@ -551,6 +555,9 @@ async function searchCases(query) {
       div.textContent = `${item.name} (${item.fileNumber})`;
       if (item.reason) {
         div.textContent += ` - ${item.reason}`;
+      }
+      if (archivedStates[index]) {
+        div.appendChild(createArchivedBadge());
       }
       resultsListElement.appendChild(div);
     });
@@ -602,6 +609,11 @@ async function searchCases(query) {
         // Aktualisiere das Label mit den Falldetails, einschließlich `reason`, falls vorhanden
         const customizableLabel = document.getElementById("customizableLabel");
         customizableLabel.textContent = `${currentSelectedCase.fileNumber}: ${currentSelectedCase.name} - ${currentSelectedCase.reason || i18nMessage("noReasonGiven")}`;
+        updateArchivedCaseNotice(
+          currentSelectedCase.id,
+          caseMetaData.archived,
+          loginData,
+        );
 
         // Beteiligte anzeigen
         displayParties(currentSelectedCase.id);
@@ -807,6 +819,8 @@ async function getCaseMetaData(caseId, username, password, serverAddress) {
       if ("custom3" in data && data.custom3 !== null) {
         extractedData.custom3 = data.custom3;
       }
+
+      extractedData.archived = isArchivedValue(data.archived);
 
       return extractedData;
     });
@@ -1902,6 +1916,7 @@ async function selectSuggestion(match, loginData, tabId) {
   if (customizableLabel) {
     customizableLabel.textContent = `${item.fileNumber}: ${item.name} (${caseMetaData.reason || "?"} - ${caseMetaData.lawyer || "?"})`;
   }
+  updateArchivedCaseNotice(item.id, caseMetaData.archived, loginData);
 
   // Automatisch Speichern nach Senden aktivieren
   browser.runtime.sendMessage({
@@ -1992,6 +2007,9 @@ async function displaySuggestions(matches, loginData, tabId) {
     caseDetails.className = "caseDetails";
     caseDetails.textContent = `${metadata.reason || "?"} - ${metadata.lawyer || "?"}`;
     caseInfo.appendChild(caseDetails);
+    if (isArchivedValue(metadata.archived)) {
+      caseName.appendChild(createArchivedBadge());
+    }
 
     const confidenceBadge = document.createElement("span");
     confidenceBadge.className = `confidenceBadge ${confidenceClass}`;

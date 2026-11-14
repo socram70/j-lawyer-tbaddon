@@ -97,6 +97,18 @@
   "allAttachmentsExcludedMessageSavedFeedback": {
     "message": "Die Nachricht wurde gespeichert, alle Anhänge sind laut Einstellungen ausgeschlossen."
   },
+  "archivedCaseWarning": {
+    "message": "Diese Akte ist abgelegt (archiviert)."
+  },
+  "reactivateCaseButton": {
+    "message": "Akte reaktivieren"
+  },
+  "caseReactivatedFeedback": {
+    "message": "Akte wurde reaktiviert."
+  },
+  "archivedCaseBadge": {
+    "message": "[abgelegt]"
+  },
   "subjectTemplateLabel": {
     "message": "Betreff-Vorlage für neue E-Mails, leer bedeutet Standard:"
   },
