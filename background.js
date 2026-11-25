@@ -2039,6 +2039,20 @@ messenger.compose.onAfterSend.addListener(async (tab, sendInfo) => {
     return;
   }
 
+  // Abgebrochener oder fehlgeschlagener Versand: Zuordnung behalten, damit ein erneutes
+  // Senden aus demselben Verfassen-Fenster wieder in der Akte gespeichert wird
+  if (sendInfo?.error || !sendInfo?.messages?.length) {
+    console.warn(
+      "Versand abgebrochen oder fehlgeschlagen, Aktenzuordnung bleibt erhalten:",
+      sendInfo?.error,
+    );
+    await logActivity("onAfterSend", {
+      "Versand nicht abgeschlossen, Zuordnung bleibt erhalten":
+        sendInfo?.error || "keine gesendete Nachricht",
+    });
+    return;
+  }
+
   try {
     console.log("Nachricht SendInfo:", sendInfo);
     console.log("Nachricht wurde gesendet");
